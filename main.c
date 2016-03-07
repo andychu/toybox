@@ -127,6 +127,45 @@ void toy_init(struct toy_list *which, char *argv[])
   toy_singleinit(which, argv);
 }
 
+// If an argument starts with ARG-FILE:, then replace it with the contents of
+// the file.  This can be used with afl-fuzz as follows:
+//
+// afl-fuzz -i INPUT_DIR -o OUT_DIR -- toybox chmod ARG-FILE:@@ dummy_file
+//
+// afl-fuzz will invoke toybox with the @@ placeholder replaced by the filename
+// of a generated test case.  // This lets us fuzz arbitrary toybox arguments
+// with a simple shell script.
+//
+// NOTE: We can't use xopen, xread, perror_exit, etc. here because
+// toys->which.name isn't set yet.
+
+void read_args_from_files(char *argv[])
+{
+  char **arg = argv;
+  do {
+    char *path;
+    int fd;
+    if ((path = strafter(*arg, "ARG-FILE:"))) {
+      fd = open(path, O_RDONLY);
+      if (fd == -1) {
+        fprintf(stderr, "Error opening %s: %s\n", path, strerror(errno));
+        exit(1);
+      }
+      // For simplicity, truncate the file.  Arguments have a length limit in
+      // Unix, and afl-fuzz tends to generate short test cases anyway.
+      size_t bufsize = 1024;
+      char *buf = malloc(bufsize);  // never freed
+      int n = read(fd, buf, bufsize);
+      if (n == -1) {
+        fprintf(stderr, "Error reading %s: %s\n", path, strerror(errno));
+        exit(1);
+      }
+      buf[n] = '\0';  // args are always NUL-terminated
+      *arg = buf;  // mutates argv argument
+    }
+  } while (*++arg);
+}
+
 // Like exec() but runs an internal toybox command instead of another file.
 // Only returns if it can't run command internally, otherwise exit() when done.
 void toy_exec(char *argv[])
@@ -142,6 +181,15 @@ void toy_exec(char *argv[])
 
   // Return if we need to re-exec to acquire root via suid bit.
   if (toys.which && (which->flags&TOYFLAG_ROOTONLY) && toys.wasroot) return;
+
+  // Processing for afl-fuzz.  Mutates argv.
+  //
+  // NOTE: toy_exec can be called multiple times (e.g. twice with 'toybox sed',
+  // three times with 'toybox toybox sed').  Calling read_args_from_files
+  // multiple times is OK unless the magic ARG-FILE: string appears in a file.
+  if (1) {
+    read_args_from_files(argv);
+  }
 
   // Run command
   toy_init(which, argv);
