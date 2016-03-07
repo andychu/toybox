@@ -36,7 +36,7 @@ void rfkill_main(void)
 
   // Parse command line options
   for (tvar = 0; tvar < 3; tvar++)
-    if (!strcmp((char *[]){"list", "block", "unblock"}[tvar], *optargs)) break;
+    if (!strcmp(((char *[]){"list", "block", "unblock"})[tvar], *optargs)) break;
   if (tvar == 3) error_exit("unknown cmd '%s'", *optargs);
   if (tvar) {
     int i;

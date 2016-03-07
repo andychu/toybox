@@ -1376,7 +1376,7 @@ static void top_common(
         if (i == KEY_LEFT) setsort(TT.sortpos-1);
         else if (i == KEY_RIGHT) setsort(TT.sortpos+1);
         // KEY_UP is 0, so at end of strchr
-        else if (strchr((char []){KEY_DOWN,KEY_PGUP,KEY_PGDN,KEY_UP}, i)) {
+        else if (strchr(((char []){KEY_DOWN,KEY_PGUP,KEY_PGDN,KEY_UP}), i)) {
           recalc = 0;
 
           if (i == KEY_UP) topoff--;
