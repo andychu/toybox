@@ -187,6 +187,8 @@ void toy_exec(char *argv[])
   // NOTE: toy_exec can be called multiple times (e.g. twice with 'toybox sed',
   // three times with 'toybox toybox sed').  Calling read_args_from_files
   // multiple times is OK unless the magic ARG-FILE: string appears in a file.
+  //
+  // TODO: Add CFG_ARG_FILE here.
   if (1) {
     read_args_from_files(argv);
   }
