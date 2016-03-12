@@ -38,6 +38,8 @@ do
   echo "# CONFIG_TOYBOX is not set" >> "$KCONFIG_CONFIG" &&
   grep "CONFIG_TOYBOX_" .config >> "$KCONFIG_CONFIG" &&
 
-  make &&
+  # This list of variables matches the 'export' line in the Makefile.
+  make CROSS_COMPILE=$CROSS_COMPILE CFLAGS=$CFLAGS OPTIMIZE=$OPTIMIZE \
+    LDOPTIMIZE=$LDOPTIMIZE CC=$CC HOSTCC=$HOSTCC V=$V &&
   mv -f toybox $PREFIX$i || exit 1
 done
