@@ -7,6 +7,8 @@
 
 HOSTCC?=cc
 
+# If the list of exported variables changes, also change the make invocation
+# in scripts/single.sh.
 export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V
 
 all: toybox
