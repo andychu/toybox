@@ -17,5 +17,19 @@ testing "% * same priority" "expr 3 % 2 \* 4" "4\n" "" ""
 testing "* % same priority" "expr 3 \* 2 % 4" "2\n" "" ""
 testing "= > same priority" "expr 0 = 2 \> 3" "0\n" "" ""
 testing "> = same priority" "expr 3 \> 2 = 1" "1\n" "" ""
+
+# result of ':' regex match can subsequently be used for arithmetic
 testing "string becomes integer" "expr ab21xx : '[^0-9]*\([0-9]*\)' + 3" \
 	"24\n" "" ""
+
+# BUG: exits early, so gives 2?
+testing "exit code when true" "expr a; echo $?" "a\n0\n" "" ""
+
+testing "exit code when false" "expr 0; echo $?" "a\n1\n" "" ""
+
+testing "exit code with syntax error" "expr \(; echo $?" "a\n2\n" "" ""
+
+# BUG: seg fault
+testing "regex" "expr 3 : '\(.\)'" "3\n" "" ""
+
+testing "no expression" "expr; echo $?" "2\n" "" ""
