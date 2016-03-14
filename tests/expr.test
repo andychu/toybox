@@ -21,6 +21,10 @@ testing "> = same priority" "expr 3 \> 2 = 1" "1\n" "" ""
 testing "/ by zero" "expr 1 / 0; echo \$?" "2\n" "" ""
 testing "% by zero" "expr 1 % 0; echo \$?" "2\n" "" ""
 
+testing "regex position" "expr ab21xx : '[^0-9]*[0-9]*'" "4\n" "" ""
+testing "regex extraction" "expr ab21xx : '[^0-9]*\([0-9]*\).*'" "21\n" "" ""
+testing "regex no match" "expr ab21xx : x" "0\n" "" ""
+
 # result of ':' regex match can subsequently be used for arithmetic
 testing "string becomes integer" "expr ab21xx : '[^0-9]*\([0-9]*\)' + 3" \
 	"24\n" "" ""
@@ -46,7 +50,7 @@ testing "exit code with syntax error" "expr \(; echo \$?" "2\n" "" ""
 testing "exit code with expression giving 0" "expr -1 + 1; echo \$?" "1\n" "" ""
 
 # BUG: seg fault
-testing "regex" "expr 3 : '\(.\)'" "3\n" "" ""
+testing "regex segfault" "expr 3 : '\(.\)'" "3\n" "" ""
 
 # NOTE: coreutils expr considers no expression a syntax error, so the return
 # value is 2 instead of 1.
