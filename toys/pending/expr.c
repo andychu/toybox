@@ -220,20 +220,20 @@ void advance() {
   TT.tok = *toys.optargs++;
 }
 
-// Evalute an expression.  'lhs' is mutated.
-static void eval_expr(struct value *lhs, int min_prec)
+// Evalute a compound expression, setting 'ret'.
+static void eval_expr(struct value *ret, int min_prec)
 {
   if (!TT.tok) syntax_error("Unexpected end of expression");
 
-  // Parse LHS atom.
+  // Parse LHS atom, setting 'ret'.
   if (!strcmp(TT.tok, "(")) {  // parenthesized expression
     advance(); // consume (
-    eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
+    eval_expr(ret, 1);  // inside ( ) means we start with min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
     advance(); // consume )
   } else { // simple literal
-    parse_value(TT.tok, lhs);
+    parse_value(TT.tok, ret);
     advance();
   }
 
@@ -250,7 +250,7 @@ static void eval_expr(struct value *lhs, int min_prec)
     advance();
 
     eval_expr(&rhs, o->prec + 1); // evaluate RHS, with higher min precedence
-    o->calc(lhs, &rhs); // apply operator
+    o->calc(ret, &rhs); // apply operator, setting 'ret'.
   }
 }
 
