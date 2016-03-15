@@ -311,27 +311,26 @@ void advance() {
 // 'lhs' is mutated.
 static void eval_expr(struct value *lhs, int min_prec)
 {
-  char **argv = toys.optargs;
-  //char *token = *argv;
   //struct value lhs;
 
-  if (!TT.tok) {
-    syntax_error("Unexpected end of expression");
-  }
+  if (!TT.tok) syntax_error("Unexpected end of expression");
 
-  if (!strcmp(TT.tok, "(")) {
-    advance();  // consume (
+  // parse LHS atom
+  if (!strcmp(TT.tok, "(")) {  // parenthesized expression
+    advance(); // consume (
     eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
     advance();
-  } else {
+  } else { // simple literal
     parse_value(TT.tok, lhs);
     advance();
   }
 
+  struct value rhs;
+
+  // parse RHS expressions until precedence
   while (TT.tok) {
-    //token = *argv;
     printf("token: %s\n", TT.tok);
     char prec;
     struct op2 *o = OPS;
@@ -350,8 +349,10 @@ static void eval_expr(struct value *lhs, int min_prec)
       printf("stopping PREC loop at %s\n", TT.tok);
       //break;
     }
-
     advance();
+
+    eval_expr(&rhs, o->prec + 1); // evaluate RHS
+    o->calc(lhs, &rhs); // LHS mutated
   }
 }
 
