@@ -55,6 +55,17 @@ struct value {
   long long i;
 };
 
+void syntax_error(char *msg, ...) {
+  if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
+    va_list va;
+    va_start(va, msg);
+    verror_msg(msg, 0, va);
+    va_end(va);
+    xexit();
+  } else
+    error_exit("syntax error");
+}
+
 #define INT_BUF_SIZE 21
 
 // Get the value as an string.
@@ -95,7 +106,7 @@ static int is_false(struct value *v)
     return !v->i;
 }
 
-// 'ret' is filled with a string capture or int match position .
+// 'ret' is filled with a string capture or int match position.
 static void re(char *target, char *pat, struct value *ret)
 {
   regex_t rp;
@@ -113,29 +124,6 @@ static void re(char *target, char *pat, struct value *ret)
     else
       assign_int(ret, 0);
   }
-}
-
-static void and(struct value *lhs, struct value *rhs)
-{
-  if (is_false(lhs) || is_false(rhs)) {
-    assign_int(lhs, 0);
-  }
-}
-
-static void or(struct value *lhs, struct value *rhs)
-{
-  if (is_false(lhs)) *lhs = *rhs;
-}
-
-void syntax_error(char *msg, ...) {
-  if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
-    va_list va;
-    va_start(va, msg);
-    verror_msg(msg, 0, va);
-    va_end(va);
-    xexit();
-  } else
-    error_exit("syntax error");
 }
 
 // 4 different signatures of operators.  S = string, I = int, SI = string or
@@ -164,11 +152,6 @@ static struct op_def {
   {NULL, 0, 0, 0}, // sentinel
 };
 
-// Point TT.tok at the next token.  It's NULL when there are no more tokens.
-void advance() {
-  TT.tok = *toys.optargs++;
-}
-
 void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
   long long a, b, x = 0; // x = a OP b for ints.
   // OOPS.  TODO: These have to be longer than 21!
@@ -180,15 +163,15 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
 
   case SI_TO_SI:
     switch (op) {
-    case OR:  or (ret, rhs); break;
-    case AND: and(ret, rhs); break;
+    case OR:  if (is_false(ret)) *ret = *rhs; break;
+    case AND: if (is_false(ret) || is_false(rhs)) assign_int(ret, 0); break;
     }
     break;  
 
   case SI_TO_I:
-    if (get_int(ret, &a) && get_int(rhs, &b)) {
+    if (get_int(ret, &a) && get_int(rhs, &b)) { // both are ints
       cmp = a - b;
-    } else {  // if both aren't ints, compare both as strings
+    } else { // otherwise compare both as strings
       get_str(ret, s);
       get_str(rhs, t);
       cmp = strcmp(s, t);
@@ -208,17 +191,11 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     if (!get_int(ret, &a) || !get_int(rhs, &b))
       error_exit("non-integer argument");
     switch (op) {
-    case ADD:  x = a + b; break;
-    case SUB:  x = a - b; break;
-    case MUL:  x = a * b; break;
-    case DIVI: 
-      if (b == 0) error_exit("division by zero");
-      x = a / b;
-      break;
-    case MOD:
-      if (b == 0) error_exit("division by zero");
-      x = a % b;
-      break;
+    case ADD: x = a + b; break;
+    case SUB: x = a - b; break;
+    case MUL: x = a * b; break;
+    case DIVI: if (b == 0) error_exit("division by zero"); x = a / b; break;
+    case MOD:  if (b == 0) error_exit("division by zero"); x = a % b; break;
     }
     assign_int(ret, x);
     break;
@@ -229,6 +206,11 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     re(s, t, ret);
     break;
   }
+}
+
+// Point TT.tok at the next token.  It's NULL when there are no more tokens.
+void advance() {
+  TT.tok = *toys.optargs++;
 }
 
 // Evalute a compound expression, setting 'ret'.
