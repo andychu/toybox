@@ -49,9 +49,7 @@ GLOBALS(
   char* tok; // current token, not on the stack since recursive calls mutate it
 )
 
-// Values that expression operate over.
-// s always points to an argv string, so we don't worry about memory
-// allocation.
+// Values that expressions operate over.
 struct value {
   char *s;
   long long i;
@@ -98,52 +96,7 @@ static int is_false(struct value *v)
     return !v->i;
 }
 
-// Converts the value to a number and returns 1, or returns 0 if it can't be.
-void maybe_fill_int(struct value *v) {
-  //if (v->valid_int) return;
-  char *endp;
-  v->i = strtoll(v->s, &endp, 10);
-  // If non-NULL, there are still characters left, and it's a string.
-  //v->valid_int = !*endp;
-  //printf("%s is valid?  %d\n", v->s, v->valid_int);
-}
-
-// Converts a number back to a string, if it isn't already one.
-void maybe_fill_string(struct value *v) {
-  if (v->s) return;  // nothing to do
-  static char num_buf[21];
-  snprintf(num_buf, sizeof(num_buf), "%lld", v->i);
-  v->s = num_buf;  // BUG!
-}
-
-/*
-static char *num_to_str(long long num)
-{
-  static char num_buf[21];
-  snprintf(num_buf, sizeof(num_buf), "%lld", num);
-  return num_buf;
-}
-*/
-
-  /*
-static int cmp(struct value *lhs, struct value *rhs)
-{
-  if (lhs->valid_int && rhs->valid_int) {
-    return lhs->i - rhs->i;
-  } else {
-    return strcmp(lhs->s, rhs->s);
-  }
-  if (lhs->s || rhs->s) {
-    // at least one operand is a string
-    char *ls = lhs->s ? lhs->s : num_to_str(lhs->i);
-    char *rs = rhs->s ? rhs->s : num_to_str(rhs->i);
-    // BUG: ls and rs are always the same static buffer!!!!
-    return strcmp(ls, rs);
-  } else return lhs->i - rhs->i;
-}
-  */
-
-// Returns int position or string capture.
+// 'ret' is filled with a string capture or int match position .
 static void re(char *target, char *pat, struct value *ret)
 {
   regex_t rp;
@@ -171,76 +124,10 @@ static void re(char *target, char *pat, struct value *ret)
   }
 }
 
-/*
-static void mod(struct value *lhs, struct value *rhs)
-{
-  if (rhs->i == 0) error_exit("division by zero");
-  lhs->i %= rhs->i;
-}
-
-static void divi(struct value *lhs, struct value *rhs)
-{
-  if (rhs->i == 0) error_exit("division by zero");
-  lhs->i /= rhs->i;
-}
-
-static void mul(struct value *lhs, struct value *rhs)
-{
-  lhs->i *= rhs->i;
-}
-
-static void sub(struct value *lhs, struct value *rhs)
-{
-  lhs->i -= rhs->i;
-}
-
-static void add(struct value *lhs, struct value *rhs)
-{
-  lhs->i += rhs->i;
-}
-
-static void ne(struct value *lhs, struct value *rhs)
-{
-  lhs->i = cmp(lhs, rhs) != 0;
-  lhs->s = NULL;
-}
-
-static void lte(struct value *lhs, struct value *rhs)
-{
-  lhs->i = cmp(lhs, rhs) <= 0;
-  lhs->s = NULL;
-}
-
-static void lt(struct value *lhs, struct value *rhs)
-{
-  lhs->i = cmp(lhs, rhs) < 0;
-  lhs->s = NULL;
-}
-
-static void gte(struct value *lhs, struct value *rhs)
-{
-  lhs->i = cmp(lhs, rhs) >= 0;
-  lhs->s = NULL;
-}
-
-static void gt(struct value *lhs, struct value *rhs)
-{
-  lhs->i = cmp(lhs, rhs) > 0;
-  lhs->s = NULL;
-}
-
-static void eq(struct value *lhs, struct value *rhs)
-{
-  lhs->i = !cmp(lhs, rhs);
-  lhs->s = NULL;
-}
-*/
-
 static void and(struct value *lhs, struct value *rhs)
 {
   if (is_false(lhs) || is_false(rhs)) {
-    lhs->i = 0;
-    lhs->s = NULL;
+    assign_int(lhs, 0);
   }
 }
 
@@ -248,18 +135,6 @@ static void or(struct value *lhs, struct value *rhs)
 {
   if (is_false(lhs)) *lhs = *rhs;
 }
-
-/*
-// Converts an arg string to a value struct.  Assumes arg != NULL.
-static void parse_value(char* arg, struct value *v)
-{
-  char *endp;
-  v->i = strtoll(arg, &endp, 10);
-  // if non-NULL, there's still stuff left, and it's a string.  Otherwise no
-  // string.
-  v->s = *endp ? arg : NULL;
-}
-*/
 
 void syntax_error(char *msg, ...) {
   if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
@@ -277,34 +152,6 @@ void syntax_error(char *msg, ...) {
 enum { XX, SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
 
 enum { XXX, OR, AND, EQ, NE, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
-
-/*
-// operators grouped by precedence
-static struct op_def {
-  char *tok;
-  char prec;
-  // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
-  void (*calc)(struct value *lhs, struct value *rhs);
-} OPS[] = {
-  // uses is_false
-  {"|", 1, or  },
-  {"&", 2, and },
-
-  // all of these call cmp, so they use .i or .s in lhs.i, give 0 or 1 in lhs.i
-  // they might coerce an int to string.
-  {"=", 3, eq  }, {"==", 3, eq  }, {">",  3, gt  }, {">=", 3, gte },
-  {"<", 3, lt  }, {"<=", 3, lte }, {"!=", 3, ne  },
-
-  // requires ints in lhs.i and rhs.i, use lhs.i.
-  {"+", 4, add }, {"-",  4, sub },
-  {"*", 5, mul }, {"/",  5, divi }, {"%", 5, mod },
-
-  // requires strings
-  {":", 6, re  },
-
-  {"",  0, NULL}, // sentinel
-};
-*/
 
 // operators grouped by precedence
 static struct op_def {
@@ -332,8 +179,8 @@ void advance() {
 }
 
 void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
-  long long a, b, x; // x = a OP b for ints.
-  // OOPS.  These have to be longer than 21!
+  long long a, b, x = 0; // x = a OP b for ints.
+  // OOPS.  TODO: These have to be longer than 21!
   char s[INT_BUF_SIZE], t[INT_BUF_SIZE]; // string operands
   int cmp;
   char op = o->op;
@@ -435,19 +282,6 @@ static void eval_expr(struct value *ret, int min_prec)
 
     eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
     eval_op(o, ret, &rhs);
-
-    /*
-    maybe_fill_int(ret);
-    maybe_fill_int(&rhs);
-    if (prec == 4 || prec == 5) { // arithmetic error checking
-      if (!ret->valid_int || !rhs.valid_int) error_exit("non-integer argument");
-    }
-    o->calc(ret, &rhs); // Apply operator, setting 'ret'.
-    if (prec == 4 || prec == 5) {
-      ret->s = NULL;  // not strings
-    }
-    maybe_fill_string(ret); // integer results might be used as strings
-    */
   }
 }
 
