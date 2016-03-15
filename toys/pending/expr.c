@@ -319,6 +319,26 @@ static struct op_def {
   {"",  0, NULL}, // sentinel
 };
 
+// operators grouped by precedence
+static struct op_def2 {
+  char *tok;
+  char prec, sig, op; // precedence, signature for type coercion, operator ID
+} OPS2[] = {
+  // logical ops, prec 1 and 2, sig SI_TO_SI
+  {"|", 1, SI_TO_SI, OR  },
+  {"&", 2, SI_TO_SI, AND },
+  // comparison ops, prec 3, sig SI_TO_I
+  {"=", 3, SI_TO_I, EQ }, {"==", 3, SI_TO_I, EQ  }, {"!=", 3, SI_TO_I, NE },
+  {">", 3, SI_TO_I, GT }, {">=", 3, SI_TO_I, GTE },
+  {"<", 3, SI_TO_I, LT }, {"<=", 3, SI_TO_I, LTE }, 
+  // arithmetic ops, prec 4 and 5, sig I_TO_I
+  {"+", 4, I_TO_I, ADD }, {"-",  4, I_TO_I, SUB },
+  {"*", 5, I_TO_I, MUL }, {"/",  5, I_TO_I, DIVI }, {"%", 5, I_TO_I, MOD },
+  // regex match
+  {":", 6, S_TO_SI, RE },
+  {"",  0, XX, XXX}, // sentinel
+};
+
 // Point TT.tok at the next token.  It's NULL when there are no more tokens.
 void advance() {
   TT.tok = *toys.optargs++;
