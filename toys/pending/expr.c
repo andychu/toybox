@@ -210,9 +210,15 @@ static struct op {
   {"",  0, NULL}, // sentinel
 };
 
-void syntax_error(char *msg) {
-  fprintf(stderr, "%s\n", msg);
-  exit(2);
+void syntax_error(char *msg, ...) {
+  if (1) { // detailed message for debugging
+    va_list va;
+    va_start(va, msg);
+    verror_msg(msg, 0, va);
+    va_end(va);
+    xexit();
+  } else
+    error_exit("syntax error");
 }
 
 // point TT.tok at the next token.  It is NULL to indicate the end.
@@ -223,14 +229,14 @@ void advance() {
 // Evalute a compound expression, setting 'ret'.
 static void eval_expr(struct value *ret, int min_prec)
 {
-  if (!TT.tok) syntax_error("Unexpected end of expression");
+  if (!TT.tok) syntax_error("Unexpected end of input");
 
   // Parse LHS atom, setting 'ret'.
   if (!strcmp(TT.tok, "(")) { // parenthesized expression
     advance(); // consume (
     eval_expr(ret, 1); // We're inside ( ), so start with min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
-    if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
+    if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got %s", TT.tok);
     advance(); // consume )
   } else { // simple literal
     parse_value(TT.tok, ret);
@@ -256,14 +262,13 @@ static void eval_expr(struct value *ret, int min_prec)
 
 void expr_main(void)
 {
-  struct value tok, ret = {0};
-
+  struct value ret = {0};
   toys.exitval = 2; // if exiting early, indicate invalid expression
 
   advance(); // initialize global token
   eval_expr(&ret, 1);
 
-  if (TT.tok) syntax_error("Got extra input: %s\n");//, TT.tok);
+  if (TT.tok) syntax_error("Unexpected extra input '%s'\n", TT.tok);
 
   if (ret.s) printf("%s\n", ret.s);
   else printf("%lld\n", ret.i);
