@@ -87,6 +87,7 @@ static void re(struct value *lhs, struct value *rhs)
   regmatch_t rm[2];
 
   xregcomp(&rp, rhs->s, 0);
+  // SEGFAULT: lhs->s is NULL.  parse_op keeps passing it
   if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) {
     if (rp.re_nsub > 0 && rm[1].rm_so >= 0) 
       lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
@@ -199,6 +200,8 @@ static void get_value(struct value *v)
   arg = toys.optargs[TT.argidx++];
 
   v->i = strtoll(arg, &endp, 10);
+  // if non-NULL, there's still stuff left, and it's a string.  Otherwise no
+  // string.
   v->s = *endp ? arg : NULL;
 }
 
@@ -226,10 +229,33 @@ static struct op {
   {"(",   NULL}, // special case - must be last
 };
 
+// operators grouped by precedence
+static struct op2 {
+  char *tok;
+  unsigned char prec;
+
+  // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
+  void (*calc)(struct value *lhs, struct value *rhs);
+} OPS[] = {
+  {"|", 1, or  },
+  {"&", 2, and },
+  {"=", 3, eq  }, {"==", 3, eq  }, {">",  3, gt  }, {">=", 3, gte },
+  {"<", 3, lt  }, {"<=", 3, lte }, {"!=", 3, ne  },
+  {"+", 4, add }, {"-",  4, sub },
+  {"*", 5, mul }, {"/",  5, divi }, {"%", 5, mod },
+  {":", 6, re  },
+  {"",  0, NULL}, // sentinel
+};
+
 // "|,&,= ==> >=< <= !=,+-,*/%,:"
 
 static void parse_op(struct value *lhs, struct value *tok, struct op *op)
 {
+  //printf("parse_op: lhs->s = %s\n", lhs->s);
+  //printf("parse_op op = %p\n", op);
+  // oh this is weird as hell, it just cycles around and around.
+  //
+  // and then if it doesn't match, it doesn't do anything.  geez.
   if (!op) op = ops;
 
   // special case parsing for parentheses
@@ -246,11 +272,16 @@ static void parse_op(struct value *lhs, struct value *tok, struct op *op)
     return;
   }
 
+  // doesn't this waste stack space?
   parse_op(lhs, tok, op + 1);
   while (match(tok, op->tok)) {
+    // PROBLEM: prematurely converted to integer in : case
+    // all the other operators which take strings as LHS also take integers
+    //printf("tok->s: %s, op->tok: %s\n", tok->s, op->tok);
     struct value rhs;
     parse_op(&rhs, tok, op + 1);
     if (rhs.s && !*rhs.s) error_exit("syntax error"); // premature end of expression
+    //printf("lhs->s = %s\n", lhs->s);
     op->calc(lhs, &rhs);
   }
 }
