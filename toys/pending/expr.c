@@ -86,12 +86,11 @@ void assign_int(struct value *v, long long i)
   v->s = NULL;
 }
 
-// check if v is the integer 0 or the empty string
+// check if v is 0 or the empty string
 static int is_false(struct value *v)
 {
-  //return v->s ? !*v->s : !v->i;
   if (v->s)
-    return !*v->s || !strcmp(v->s, "0");  // 0 is false
+    return !*v->s || !strcmp(v->s, "0");  // get_int("0") -> 0
   else
     return !v->i;
 }
@@ -101,26 +100,18 @@ static void re(char *target, char *pat, struct value *ret)
 {
   regex_t rp;
   regmatch_t rm[2];
-  //printf("REGEX lhs %s  rhs %s\n", lhs->s, rhs->s);
 
   xregcomp(&rp, pat, 0);
-  // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
   if (!regexec(&rp, target, 2, rm, 0) && rm[0].rm_so == 0) { // matched
-    //printf("matched\n");
-    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) {// has capture
-      //printf("capture\n");
+    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) // has capture
       ret->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, target+rm[1].rm_so);
-    } else {
-      //printf("no capture\n");
+    else
       assign_int(ret, rm[0].rm_eo);
-    }
   } else { // no match
-    //printf("no match\n");
     if (rp.re_nsub > 0) // has capture
       ret->s = "";
-    else {
+    else
       assign_int(ret, 0);
-    }
   }
 }
 
