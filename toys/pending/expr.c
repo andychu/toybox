@@ -226,9 +226,9 @@ static void eval_expr(struct value *ret, int min_prec)
   if (!TT.tok) syntax_error("Unexpected end of expression");
 
   // Parse LHS atom, setting 'ret'.
-  if (!strcmp(TT.tok, "(")) {  // parenthesized expression
+  if (!strcmp(TT.tok, "(")) { // parenthesized expression
     advance(); // consume (
-    eval_expr(ret, 1);  // inside ( ) means we start with min_prec = 1
+    eval_expr(ret, 1); // We're inside ( ), so start with min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
     advance(); // consume )
@@ -241,16 +241,16 @@ static void eval_expr(struct value *ret, int min_prec)
   struct value rhs;
   while (TT.tok) {
     struct op *o = OPS;
-    while (o->calc) {  // Look up the operator token TT.tok
+    while (o->calc) {  // Look up the precedence of operator TT.tok
       if (!strcmp(TT.tok, o->tok)) break;
       o++;
     }
-    if (!o->calc) break; // not an operator (extra input will fail later)
-    if (o->prec < min_prec) break; // precedence too low for this frame
+    if (!o->calc) break; // Not an operator (extra input will fail later)
+    if (o->prec < min_prec) break; // Precedence too low, pop a stack frame
     advance();
 
-    eval_expr(&rhs, o->prec + 1); // evaluate RHS, with higher min precedence
-    o->calc(ret, &rhs); // apply operator, setting 'ret'.
+    eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
+    o->calc(ret, &rhs); // Apply operator, setting 'ret'.
   }
 }
 
