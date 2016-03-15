@@ -140,8 +140,8 @@ static void re(struct value *lhs, struct value *rhs)
 
   xregcomp(&rp, rhs->s, 0);
   // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
-  if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) {
-    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) 
+  if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) { // matched
+    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) // has capture
       lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
     else {
       lhs->i = rm[0].rm_eo;
@@ -149,7 +149,7 @@ static void re(struct value *lhs, struct value *rhs)
       lhs->s = 0;
     }
   } else { // no match
-    if (rp.re_nsub > 0)
+    if (rp.re_nsub > 0) // has capture
       lhs->s = "";
     else {
       lhs->i = 0;
