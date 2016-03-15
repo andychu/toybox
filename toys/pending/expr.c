@@ -49,7 +49,7 @@ GLOBALS(
   char* tok; // current token, not on the stack since recursive calls mutate it
 )
 
-// Values that expressions operate over.
+// Scalar value.  If s != NULL, it's a string, otherwise it's an int.
 struct value {
   char *s;
   long long i;
@@ -68,7 +68,7 @@ void syntax_error(char *msg, ...) {
 
 #define INT_BUF_SIZE 21
 
-// Get the value as an string.
+// Get the value as a string.
 void get_str(struct value *v, char* ret)
 {
   if (v->s)
@@ -97,7 +97,7 @@ void assign_int(struct value *v, long long i)
   v->s = NULL;
 }
 
-// check if v is 0 or the empty string
+// Check if v is 0 or the empty string.
 static int is_false(struct value *v)
 {
   if (v->s)
@@ -157,12 +157,11 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
   // OOPS.  TODO: These have to be longer than 21!
   char s[INT_BUF_SIZE], t[INT_BUF_SIZE]; // string operands
   int cmp;
-  char op = o->op;
 
   switch (o->sig) {
 
   case SI_TO_SI:
-    switch (op) {
+    switch (o->op) {
     case OR:  if (is_false(ret)) *ret = *rhs; break;
     case AND: if (is_false(ret) || is_false(rhs)) assign_int(ret, 0); break;
     }
@@ -176,7 +175,7 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
       get_str(rhs, t);
       cmp = strcmp(s, t);
     }
-    switch (op) {
+    switch (o->op) {
     case EQ:  x = cmp == 0; break;
     case NE:  x = cmp != 0; break;
     case GT:  x = cmp >  0; break;
@@ -190,7 +189,7 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
   case I_TO_I:
     if (!get_int(ret, &a) || !get_int(rhs, &b))
       error_exit("non-integer argument");
-    switch (op) {
+    switch (o->op) {
     case ADD: x = a + b; break;
     case SUB: x = a - b; break;
     case MUL: x = a * b; break;
@@ -237,7 +236,6 @@ static void eval_expr(struct value *ret, int min_prec)
     advance(); // consume )
   } else { // simple literal
     ret->s = TT.tok; // everything starts off as a string
-    //maybe_fill_int(ret);
     advance();
   }
 
