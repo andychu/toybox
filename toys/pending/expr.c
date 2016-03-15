@@ -55,62 +55,47 @@ GLOBALS(
 struct value {
   char *s;
   long long i;
-  char valid_int;  // can we use the .i field?
 };
 
-void get_str(struct value *v, char* ret) {
-  if (v->s); return; // already a string
-  static char num_buf[21];
-  snprintf(num_buf, sizeof(num_buf), "%lld", v->i);
-  v->s = num_buf;  // BUG!
+#define INT_BUF_SIZE 21
+
+// Get the value as an string.
+void get_str(struct value *v, char* ret)
+{
+  if (v->s)
+    snprintf(ret, INT_BUF_SIZE, "%s", v->s);  // TODO: use strncpy
+  else
+    snprintf(ret, INT_BUF_SIZE, "%lld", v->i);
 }
 
-// Try to get the int value, but don't mutate v.
-long long get_int(struct value *v, long long *ret) {
-  if (v->s) {  // try to convert to integer
-    // stroll
-    if (1) {
-      return 1;
-    } else {
-      return 0;
-    }
+// Get the value as an integer and return 1, or return 0 on error.
+int get_int(struct value *v, long long *ret)
+{
+  if (v->s) {
+    char *endp;
+    *ret = strtoll(v->s, &endp, 10);
+    return *endp ? 0 : 1; // If endp points to NUL, all chars were converted
   } else {
     *ret = v->i;
     return 1;
   }
 }
 
-void assign_int(struct value *v, long long i) {
+// Preserve the invariant that v.s is NULL when the value is an integer.
+void assign_int(struct value *v, long long i)
+{
   v->i = i;
   v->s = NULL;
 }
 
-/*
-  // NOTE: because of the 'ret' overwriting, this is awkward.
-  // I think we need to have the enum.  char tag == 0 for int and 1 for string.
-  // and then every operator coerces?
-  int get_int(v, &i)
-  char[str]
-
-  // re and cmp coerce_str
-  // arithmetic does coerce int
-  // this also makes memory management easier.  use stack buffers.
-  // it might copy v->s into the buf.  That's fine.
-  
-  // is_false: check 'which' and do
-  get_str(v, s);
-
-  // note: he allows ot never free with xmalloc?  You can just xmalloc every
-  // time?
-  assign_int(v, i);
-  set_str(v, s);
-*/
-
 // check if v is the integer 0 or the empty string
-static int is_zero(struct value *v)
+static int is_false(struct value *v)
 {
   //return v->s ? !*v->s : !v->i;
-  return v->valid_int ? v->i == 0 : !*v->s;
+  if (v->s)
+    return !*v->s || !strcmp(v->s, "0");  // 0 is false
+  else
+    return !v->i;
 }
 
 // Converts the value to a number and returns 1, or returns 0 if it can't be.
@@ -119,7 +104,7 @@ void maybe_fill_int(struct value *v) {
   char *endp;
   v->i = strtoll(v->s, &endp, 10);
   // If non-NULL, there are still characters left, and it's a string.
-  v->valid_int = !*endp;
+  //v->valid_int = !*endp;
   //printf("%s is valid?  %d\n", v->s, v->valid_int);
 }
 
@@ -140,6 +125,7 @@ static char *num_to_str(long long num)
 }
 */
 
+  /*
 static int cmp(struct value *lhs, struct value *rhs)
 {
   if (lhs->valid_int && rhs->valid_int) {
@@ -147,7 +133,6 @@ static int cmp(struct value *lhs, struct value *rhs)
   } else {
     return strcmp(lhs->s, rhs->s);
   }
-  /*
   if (lhs->s || rhs->s) {
     // at least one operand is a string
     char *ls = lhs->s ? lhs->s : num_to_str(lhs->i);
@@ -155,41 +140,38 @@ static int cmp(struct value *lhs, struct value *rhs)
     // BUG: ls and rs are always the same static buffer!!!!
     return strcmp(ls, rs);
   } else return lhs->i - rhs->i;
-  */
 }
+  */
 
 // Returns int position or string capture.
-static void re(struct value *lhs, struct value *rhs)
+static void re(char *target, char *pat, struct value *ret)
 {
   regex_t rp;
   regmatch_t rm[2];
   //printf("REGEX lhs %s  rhs %s\n", lhs->s, rhs->s);
 
-  xregcomp(&rp, rhs->s, 0);
+  xregcomp(&rp, pat, 0);
   // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
-  if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) { // matched
+  if (!regexec(&rp, target, 2, rm, 0) && rm[0].rm_so == 0) { // matched
     //printf("matched\n");
     if (rp.re_nsub > 0 && rm[1].rm_so >= 0) {// has capture
       //printf("capture\n");
-      lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
+      ret->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, target+rm[1].rm_so);
     } else {
       //printf("no capture\n");
-      lhs->i = rm[0].rm_eo;
-      lhs->valid_int = 1;
-      lhs->s = 0;
+      assign_int(ret, rm[0].rm_eo);
     }
   } else { // no match
     //printf("no match\n");
     if (rp.re_nsub > 0) // has capture
-      lhs->s = "";
+      ret->s = "";
     else {
-      lhs->i = 0;
-      lhs->valid_int = 1;
-      lhs->s = 0;
+      assign_int(ret, 0);
     }
   }
 }
 
+/*
 static void mod(struct value *lhs, struct value *rhs)
 {
   if (rhs->i == 0) error_exit("division by zero");
@@ -252,10 +234,11 @@ static void eq(struct value *lhs, struct value *rhs)
   lhs->i = !cmp(lhs, rhs);
   lhs->s = NULL;
 }
+*/
 
 static void and(struct value *lhs, struct value *rhs)
 {
-  if (is_zero(lhs) || is_zero(rhs)) {
+  if (is_false(lhs) || is_false(rhs)) {
     lhs->i = 0;
     lhs->s = NULL;
   }
@@ -263,9 +246,10 @@ static void and(struct value *lhs, struct value *rhs)
 
 static void or(struct value *lhs, struct value *rhs)
 {
-  if (is_zero(lhs)) *lhs = *rhs;
+  if (is_false(lhs)) *lhs = *rhs;
 }
 
+/*
 // Converts an arg string to a value struct.  Assumes arg != NULL.
 static void parse_value(char* arg, struct value *v)
 {
@@ -275,6 +259,7 @@ static void parse_value(char* arg, struct value *v)
   // string.
   v->s = *endp ? arg : NULL;
 }
+*/
 
 void syntax_error(char *msg, ...) {
   if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
@@ -293,6 +278,7 @@ enum { XX, SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
 
 enum { XXX, OR, AND, EQ, NE, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
 
+/*
 // operators grouped by precedence
 static struct op_def {
   char *tok;
@@ -300,7 +286,7 @@ static struct op_def {
   // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
   void (*calc)(struct value *lhs, struct value *rhs);
 } OPS[] = {
-  // uses is_zero
+  // uses is_false
   {"|", 1, or  },
   {"&", 2, and },
 
@@ -318,12 +304,13 @@ static struct op_def {
 
   {"",  0, NULL}, // sentinel
 };
+*/
 
 // operators grouped by precedence
-static struct op_def2 {
+static struct op_def {
   char *tok;
   char prec, sig, op; // precedence, signature for type coercion, operator ID
-} OPS2[] = {
+} OPS[] = {
   // logical ops, prec 1 and 2, sig SI_TO_SI
   {"|", 1, SI_TO_SI, OR  },
   {"&", 2, SI_TO_SI, AND },
@@ -336,7 +323,7 @@ static struct op_def2 {
   {"*", 5, I_TO_I, MUL }, {"/",  5, I_TO_I, DIVI }, {"%", 5, I_TO_I, MOD },
   // regex match
   {":", 6, S_TO_SI, RE },
-  {"",  0, XX, XXX}, // sentinel
+  {NULL, 0, 0, 0}, // sentinel
 };
 
 // Point TT.tok at the next token.  It's NULL when there are no more tokens.
@@ -345,16 +332,13 @@ void advance() {
 }
 
 void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
-  // Operators in a precedence class also have the same type coercion rules.
-  int sig = 0;  // o->sig
-  int op = 0;   // o->op
+  long long a, b, x; // x = a OP b for ints.
+  // OOPS.  These have to be longer than 21!
+  char s[INT_BUF_SIZE], t[INT_BUF_SIZE]; // string operands
+  int cmp;
+  char op = o->op;
 
-  // x = a OP b, and tri is for cmp()
-  long long a, b, x, tri;
-  char s[21], t[21]; // string buffers
-
-  // should arithmetic expressions always set the string part too?
-  switch (sig) {
+  switch (o->sig) {
 
   case SI_TO_SI:
     switch (op) {
@@ -365,19 +349,19 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
 
   case SI_TO_I:
     if (get_int(ret, &a) && get_int(rhs, &b)) {
-      tri = ret->i - rhs->i;
-    } else {
-      get_str(ret, &s);
-      get_str(rhs, &t);
-      tri = strcmp(s, t);
+      cmp = a - b;
+    } else {  // if both aren't ints, compare both as strings
+      get_str(ret, s);
+      get_str(rhs, t);
+      cmp = strcmp(s, t);
     }
     switch (op) {
-    case EQ:  x = tri == 0; break;
-    case NE:  x = tri != 0; break;
-    case GT:  x = tri >  0; break;
-    case GTE: x = tri >= 0; break;
-    case LT:  x = tri <  0; break;
-    case LTE: x = tri <= 0; break;
+    case EQ:  x = cmp == 0; break;
+    case NE:  x = cmp != 0; break;
+    case GT:  x = cmp >  0; break;
+    case GTE: x = cmp >= 0; break;
+    case LT:  x = cmp <  0; break;
+    case LTE: x = cmp <= 0; break;
     }
     assign_int(ret, x);
     break;
@@ -389,23 +373,22 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     case ADD:  x = a + b; break;
     case SUB:  x = a - b; break;
     case MUL:  x = a * b; break;
-    case DIVI: x = a / b; break;
-    case MOD:  x = a % b; break;
+    case DIVI: 
+      if (b == 0) error_exit("division by zero");
+      x = a / b;
+      break;
+    case MOD:
+      if (b == 0) error_exit("division by zero");
+      x = a % b;
+      break;
     }
     assign_int(ret, x);
     break;
 
-  case S_TO_SI:
-    get_str(ret, &s);
-    get_str(rhs, &t);
-    //re(s, t, ret);
-
-    // coerce both args to strings
-    // call re(s1, s2, ret) function, getting value
-    /*
-    to_string(ret);
-    to_string(&rhs);
-    */
+  case S_TO_SI: // op == RE
+    get_str(ret, s);
+    get_str(rhs, t);
+    re(s, t, ret);
     break;
   }
 }
@@ -433,8 +416,8 @@ static void eval_expr(struct value *ret, int min_prec)
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got %s", TT.tok);
     advance(); // consume )
   } else { // simple literal
-    ret->s = TT.tok;  // everything is a valid string
-    maybe_fill_int(ret);
+    ret->s = TT.tok; // everything starts off as a string
+    //maybe_fill_int(ret);
     advance();
   }
 
@@ -442,17 +425,18 @@ static void eval_expr(struct value *ret, int min_prec)
   struct value rhs;
   while (TT.tok) {
     struct op_def *o = OPS;
-    while (o->calc) {  // Look up the precedence of operator TT.tok
+    while (o->tok) {  // Look up the precedence of operator TT.tok
       if (!strcmp(TT.tok, o->tok)) break;
       o++;
     }
-    if (!o->calc) break; // Not an operator (extra input will fail later)
-    char prec = o->prec;
-    if (prec < min_prec) break; // Precedence too low, pop a stack frame
+    if (!o->tok) break; // Not an operator (extra input will fail later)
+    if (o->prec < min_prec) break; // Precedence too low, pop a stack frame
     advance();
 
-    eval_expr(&rhs, prec + 1); // Evaluate RHS, with higher min precedence
+    eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
+    eval_op(o, ret, &rhs);
 
+    /*
     maybe_fill_int(ret);
     maybe_fill_int(&rhs);
     if (prec == 4 || prec == 5) { // arithmetic error checking
@@ -463,8 +447,7 @@ static void eval_expr(struct value *ret, int min_prec)
       ret->s = NULL;  // not strings
     }
     maybe_fill_string(ret); // integer results might be used as strings
-
-    eval_op(o, ret, &rhs);
+    */
   }
 }
 
@@ -478,8 +461,8 @@ void expr_main(void)
 
   if (TT.tok) syntax_error("Unexpected extra input '%s'\n", TT.tok);
 
-  if (ret.valid_int) printf("%lld\n", ret.i);
-  else printf("%s\n", ret.s);
+  if (ret.s) printf("%s\n", ret.s);
+  else printf("%lld\n", ret.i);
 
-  exit(is_zero(&ret));
+  exit(is_false(&ret));
 }
