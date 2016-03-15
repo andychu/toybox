@@ -86,7 +86,7 @@ static void re(struct value *lhs, struct value *rhs)
   regmatch_t rm[2];
 
   xregcomp(&rp, rhs->s, 0);
-  // SEGFAULT: lhs->s is NULL.  parse_op keeps passing it
+  // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
   if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) {
     if (rp.re_nsub > 0 && rm[1].rm_so >= 0) 
       lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
@@ -193,6 +193,17 @@ static void parse_value(char* arg, struct value *v)
   v->s = *endp ? arg : NULL;
 }
 
+void syntax_error(char *msg, ...) {
+  if (0) { // detailed message for debugging.  TODO: add CFG_ var to enable
+    va_list va;
+    va_start(va, msg);
+    verror_msg(msg, 0, va);
+    va_end(va);
+    xexit();
+  } else
+    error_exit("syntax error");
+}
+
 // operators grouped by precedence
 static struct op {
   char *tok;
@@ -210,17 +221,6 @@ static struct op {
   {"",  0, NULL}, // sentinel
 };
 
-void syntax_error(char *msg, ...) {
-  if (0) { // detailed message for debugging.  TODO: add CFG_ var to enable
-    va_list va;
-    va_start(va, msg);
-    verror_msg(msg, 0, va);
-    va_end(va);
-    xexit();
-  } else
-    error_exit("syntax error");
-}
-
 // Point TT.tok at the next token.  It's NULL when there are no more tokens.
 void advance() {
   TT.tok = *toys.optargs++;
@@ -228,7 +228,7 @@ void advance() {
 
 // Evalute a compound expression, setting 'ret'.
 //
-// This function uses the recursive "Precedence Climbing" algorithm.
+// This function uses the recursive "Precedence Climbing" algorithm:
 //
 // Clarke, Keith. "The top-down parsing of expressions." University of London.
 // Queen Mary College. Department of Computer Science and Statistics, 1986.
