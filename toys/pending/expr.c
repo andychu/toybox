@@ -98,7 +98,7 @@ void maybe_fill_int(struct value *v) {
 
 // Converts a number back to a string, if it isn't already one.
 void maybe_fill_string(struct value *v) {
-  //if (v->s) return;  // nothing to do
+  if (v->s) return;  // nothing to do
   static char num_buf[21];
   snprintf(num_buf, sizeof(num_buf), "%lld", v->i);
   v->s = num_buf;  // BUG!
@@ -141,14 +141,18 @@ static void re(struct value *lhs, struct value *rhs)
   xregcomp(&rp, rhs->s, 0);
   // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
   if (!regexec(&rp, lhs->s, 2, rm, 0) && rm[0].rm_so == 0) { // matched
-    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) // has capture
+    //printf("matched\n");
+    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) {// has capture
+      //printf("capture\n");
       lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
-    else {
+    } else {
+      //printf("no capture\n");
       lhs->i = rm[0].rm_eo;
       lhs->valid_int = 1;
       lhs->s = 0;
     }
   } else { // no match
+    //printf("no match\n");
     if (rp.re_nsub > 0) // has capture
       lhs->s = "";
     else {
