@@ -47,7 +47,6 @@ config EXPR
 
 
 GLOBALS(
-  int argidx;
   char* tok; // current token, not on the stack since recursive calls mutate it
 )
 
@@ -185,27 +184,6 @@ static void or(struct value *lhs, struct value *rhs)
   if (is_zero(lhs)) *lhs = *rhs;
 }
 
-static void get_value(struct value *v)
-{
-  char *endp, *arg;
-
-  if (TT.argidx == toys.optc) {
-    v->i = 0;
-    v->s = ""; // signal end of expression
-    return;
-  }
-
-//  can't happen, the increment is after the == test
-//  if (TT.argidx >= toys.optc) error_exit("syntax error");
-
-  arg = toys.optargs[TT.argidx++];
-
-  v->i = strtoll(arg, &endp, 10);
-  // if non-NULL, there's still stuff left, and it's a string.  Otherwise no
-  // string.
-  v->s = *endp ? arg : NULL;
-}
-
 // Converts an arg string to a value struct.  Assumes arg != NULL.
 static void parse_value(char* arg, struct value *v)
 {
@@ -216,32 +194,8 @@ static void parse_value(char* arg, struct value *v)
   v->s = *endp ? arg : NULL;
 }
 
-// check if v matches a token, and consume it if so
-static int match(struct value *v, char *tok)
-{
-  if (v->s && !strcmp(v->s, tok)) {
-    get_value(v);
-    return 1;
-  }
-
-  return 0;
-}
-
-// operators in order of increasing precedence
-static struct op {
-  char *tok;
-
-  // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
-  void (*calc)(struct value *lhs, struct value *rhs);
-} ops[] = {
-  {"|",   or  }, {"&",   and }, {"=",   eq  }, {"==",  eq  }, {">",   gt  },
-  {">=",  gte }, {"<",   lt  }, {"<=",  lte }, {"!=",  ne  }, {"+",   add },
-  {"-",   sub }, {"*",   mul }, {"/",   divi}, {"%",   mod }, {":",   re  },
-  {"(",   NULL}, // special case - must be last
-};
-
 // operators grouped by precedence
-static struct op2 {
+static struct op {
   char *tok;
   char prec;
 
@@ -258,45 +212,6 @@ static struct op2 {
   {"",  0, NULL}, // sentinel
 };
 
-// "|,&,= ==> >=< <= !=,+-,*/%,:"
-
-static void parse_op(struct value *lhs, struct value *tok, struct op *op)
-{
-  //printf("parse_op: lhs->s = %s\n", lhs->s);
-  //printf("parse_op op = %p\n", op);
-  // oh this is weird as hell, it just cycles around and around.
-  //
-  // and then if it doesn't match, it doesn't do anything.  geez.
-  if (!op) op = ops;
-
-  // special case parsing for parentheses
-  if (*op->tok == '(') {
-    if (match(tok, "(")) {
-      parse_op(lhs, tok, 0);
-      if (!match(tok, ")")) error_exit("syntax error"); // missing closing paren
-    } else {
-      // tok is a string or integer - return it and get the next token
-      *lhs = *tok;
-      get_value(tok);
-    }
-
-    return;
-  }
-
-  // doesn't this waste stack space?
-  parse_op(lhs, tok, op + 1);
-  while (match(tok, op->tok)) {
-    // PROBLEM: prematurely converted to integer in : case
-    // all the other operators which take strings as LHS also take integers
-    //printf("tok->s: %s, op->tok: %s\n", tok->s, op->tok);
-    struct value rhs;
-    parse_op(&rhs, tok, op + 1);
-    if (rhs.s && !*rhs.s) error_exit("syntax error"); // premature end of expression
-    //printf("lhs->s = %s\n", lhs->s);
-    op->calc(lhs, &rhs);
-  }
-}
-
 void syntax_error(char *msg) {
   fprintf(stderr, "%s\n", msg);
   exit(2);
@@ -304,16 +219,15 @@ void syntax_error(char *msg) {
 
 // point TT.tok at the next token.  It is NULL to indicate the end.
 void advance() {
-  TT.tok = *toys.optargs;
-  toys.optargs++;
+  TT.tok = *toys.optargs++;
 }
 
-// 'lhs' is mutated.
+// Evalute an expression.  'lhs' is mutated.
 static void eval_expr(struct value *lhs, int min_prec)
 {
   if (!TT.tok) syntax_error("Unexpected end of expression");
 
-  // parse LHS atom
+  // Parse LHS atom.
   if (!strcmp(TT.tok, "(")) {  // parenthesized expression
     advance(); // consume (
     eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
@@ -325,23 +239,19 @@ static void eval_expr(struct value *lhs, int min_prec)
     advance();
   }
 
-  // evaluate operators until precedence is too low.
+  // Evaluate operators until precedence is too low.
   struct value rhs;
   while (TT.tok) {
-    //printf("token: %s\n", TT.tok);
-    struct op2 *o = OPS;
-    while (o->calc) {  // TT.tok is an operator token, look it up
-      if (!strcmp(TT.tok, o->tok)) {
-        //printf("OP %s, PREC %d\n", o->tok, o->prec);
-        break;
-      }
+    struct op *o = OPS;
+    while (o->calc) {  // Look up the operator token TT.tok
+      if (!strcmp(TT.tok, o->tok)) break;
       o++;
     }
     if (!o->calc) break; // not an operator (extra input will fail later)
     if (o->prec < min_prec) break; // precedence too low for this frame
     advance();
 
-    eval_expr(&rhs, o->prec + 1); // get RHS value
+    eval_expr(&rhs, o->prec + 1); // evaluate RHS, with higher min precedence
     o->calc(lhs, &rhs); // apply operator
   }
 }
@@ -352,19 +262,10 @@ void expr_main(void)
 
   toys.exitval = 2; // if exiting early, indicate invalid expression
 
-  TT.argidx = 0;
-
-  get_value(&tok); // warm up the parser with the initial value
-
-  advance();
+  advance(); // initialize global token
   eval_expr(&ret, 1);
 
   if (TT.tok) syntax_error("Got extra input: %s\n");//, TT.tok);
-
-  //parse_op(&ret, &tok, 0);
-
-  // final token should be end of expression
-  //if (!tok.s || *tok.s) error_exit("syntax error");
 
   if (ret.s) printf("%s\n", ret.s);
   else printf("%lld\n", ret.i);
