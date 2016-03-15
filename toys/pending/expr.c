@@ -69,12 +69,14 @@ void syntax_error(char *msg, ...) {
 #define INT_BUF_SIZE 21
 
 // Get the value as a string.
-void get_str(struct value *v, char* ret)
+void get_str(struct value *v, char** ret)
 {
   if (v->s)
-    snprintf(ret, INT_BUF_SIZE, "%s", v->s);  // TODO: use strncpy
-  else
-    snprintf(ret, INT_BUF_SIZE, "%lld", v->i);
+    *ret = v->s;
+  else {
+    *ret = xmalloc(INT_BUF_SIZE);
+    snprintf(*ret, INT_BUF_SIZE, "%lld", v->i);
+  }
 }
 
 // Get the value as an integer and return 1, or return 0 on error.
@@ -154,8 +156,7 @@ static struct op_def {
 
 void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
   long long a, b, x = 0; // x = a OP b for ints.
-  // OOPS.  TODO: These have to be longer than 21!
-  char s[INT_BUF_SIZE], t[INT_BUF_SIZE]; // string operands
+  char *s, *t; // string operands
   int cmp;
 
   switch (o->sig) {
@@ -171,8 +172,8 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     if (get_int(ret, &a) && get_int(rhs, &b)) { // both are ints
       cmp = a - b;
     } else { // otherwise compare both as strings
-      get_str(ret, s);
-      get_str(rhs, t);
+      get_str(ret, &s);
+      get_str(rhs, &t);
       cmp = strcmp(s, t);
     }
     switch (o->op) {
@@ -200,8 +201,8 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     break;
 
   case S_TO_SI: // op == RE
-    get_str(ret, s);
-    get_str(rhs, t);
+    get_str(ret, &s);
+    get_str(rhs, &t);
     re(s, t, ret);
     break;
   }
@@ -243,7 +244,7 @@ static void eval_expr(struct value *ret, int min_prec)
   struct value rhs;
   while (TT.tok) {
     struct op_def *o = OPS;
-    while (o->tok) {  // Look up the precedence of operator TT.tok
+    while (o->tok) { // Look up the precedence of operator TT.tok
       if (!strcmp(TT.tok, o->tok)) break;
       o++;
     }

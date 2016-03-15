@@ -25,6 +25,7 @@ testing "% by zero" "expr 1 % 0; echo \$?" "2\n" "" ""
 testing "regex position" "expr ab21xx : '[^0-9]*[0-9]*'" "4\n" "" ""
 testing "regex extraction" "expr ab21xx : '[^0-9]*\([0-9]*\).*'" "21\n" "" ""
 testing "regex no match" "expr ab21xx : x" "0\n" "" ""
+testing "long str" "expr abcdefghijklmnopqrstuvwxyz : '\(.*\)' = a" "0\n" "" ""
 
 # result of ':' regex match can subsequently be used for arithmetic
 testing "string becomes integer" "expr ab21xx : '[^0-9]*\([0-9]*\)' + 3" \
