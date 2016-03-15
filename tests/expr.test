@@ -31,9 +31,9 @@ testing "string becomes integer" "expr ab21xx : '[^0-9]*\([0-9]*\)' + 3" \
 
 testing "integer comparison" "expr -3 \< -2" "1\n" "" ""
 testing "string comparison" "expr -3 \< -2s" "0\n" "" ""
-testing "integer expr comparison" "expr 2 - 5 '<' -2" "1\n" "" ""
+testing "integer expr comparison" "expr 2 - 5 \< -2" "1\n" "" ""
 # result of integer arithmetic is corcsed to string for comparison
-testing "string expr comparison" "expr 2 - 5 '<' -2s" "0\n" "" ""
+testing "string expr comparison" "expr 2 - 5 \< -2s" "0\n" "" ""
 
 testing "parens around literal" "expr \( a \)" "a\n" "" ""
 
