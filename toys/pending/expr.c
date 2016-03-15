@@ -56,7 +56,7 @@ struct value {
 };
 
 void syntax_error(char *msg, ...) {
-  if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
+  if (0) { // detailed message for debugging.  TODO: add CFG_ var to enable
     va_list va;
     va_start(va, msg);
     verror_msg(msg, 0, va);
@@ -66,7 +66,7 @@ void syntax_error(char *msg, ...) {
     error_exit("syntax error");
 }
 
-#define INT_BUF_SIZE 21
+#define LONG_LONG_MAX_LEN 21
 
 // Get the value as a string.
 void get_str(struct value *v, char** ret)
@@ -74,8 +74,8 @@ void get_str(struct value *v, char** ret)
   if (v->s)
     *ret = v->s;
   else {
-    *ret = xmalloc(INT_BUF_SIZE);
-    snprintf(*ret, INT_BUF_SIZE, "%lld", v->i);
+    *ret = xmalloc(LONG_LONG_MAX_LEN);
+    snprintf(*ret, LONG_LONG_MAX_LEN, "%lld", v->i);
   }
 }
 
