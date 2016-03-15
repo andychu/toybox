@@ -58,6 +58,33 @@ struct value {
   char valid_int;  // can we use the .i field?
 };
 
+void get_str(struct value *v, char* ret) {
+  if (v->s); return; // already a string
+  static char num_buf[21];
+  snprintf(num_buf, sizeof(num_buf), "%lld", v->i);
+  v->s = num_buf;  // BUG!
+}
+
+// Try to get the int value, but don't mutate v.
+long long get_int(struct value *v, long long *ret) {
+  if (v->s) {  // try to convert to integer
+    // stroll
+    if (1) {
+      return 1;
+    } else {
+      return 0;
+    }
+  } else {
+    *ret = v->i;
+    return 1;
+  }
+}
+
+void assign_int(struct value *v, long long i) {
+  v->i = i;
+  v->s = NULL;
+}
+
 /*
   // NOTE: because of the 'ret' overwriting, this is awkward.
   // I think we need to have the enum.  char tag == 0 for int and 1 for string.
@@ -75,7 +102,7 @@ struct value {
 
   // note: he allows ot never free with xmalloc?  You can just xmalloc every
   // time?
-  set_int(v, i);
+  assign_int(v, i);
   set_str(v, s);
 */
 
@@ -304,28 +331,26 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
 
   // x = a OP b, and tri is for cmp()
   long long a, b, x, tri;
+  char s[21], t[21]; // string buffers
 
   // should arithmetic expressions always set the string part too?
   switch (sig) {
 
   case SI_TO_SI:
     switch (op) {
-    case OR:  or (ret, &rhs); break;
-    case AND: and(ret, &rhs); break;
+    case OR:  or (ret, rhs); break;
+    case AND: and(ret, rhs); break;
     }
     break;  
 
   case SI_TO_I:
-    // comparisons try ints first, then strings.
-    // If they're not both ints, then make sure they are both strings.  A
-    // bare int can be the result of arithmetic.
-    /*
-    if (!check_int(ret) || !check_int(&rhs)) {
-      to_string(ret);
-      to_string(&rhs);
+    if (get_int(ret, &a) && get_int(rhs, &b)) {
+      tri = ret->i - rhs->i;
+    } else {
+      get_str(ret, &s);
+      get_str(rhs, &t);
+      tri = strcmp(s, t);
     }
-    */
-    // cmp
     switch (op) {
     case EQ:  x = tri == 0; break;
     case NE:  x = tri != 0; break;
@@ -334,15 +359,12 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     case LT:  x = tri <  0; break;
     case LTE: x = tri <= 0; break;
     }
-    // now set
+    assign_int(ret, x);
     break;
 
   case I_TO_I:
-    /*
-    if (!check_int(ret) || !check_int(&rhs)) {
+    if (!get_int(ret, &a) || !get_int(rhs, &b))
       error_exit("non-integer argument");
-    }
-    */
     switch (op) {
     case ADD:  x = a + b; break;
     case SUB:  x = a - b; break;
@@ -350,10 +372,14 @@ void eval_op(struct op_def *o, struct value *ret, struct value *rhs) {
     case DIVI: x = a / b; break;
     case MOD:  x = a % b; break;
     }
-
+    assign_int(ret, x);
     break;
 
   case S_TO_SI:
+    get_str(ret, &s);
+    get_str(rhs, &t);
+    //re(s, t, ret);
+
     // coerce both args to strings
     // call re(s1, s2, ret) function, getting value
     /*
