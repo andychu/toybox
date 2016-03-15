@@ -130,9 +130,9 @@ static void re(char *target, char *pat, struct value *ret)
 
 // 4 different signatures of operators.  S = string, I = int, SI = string or
 // int.
-enum { XX, SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
+enum { SI_TO_SI = 1, SI_TO_I, I_TO_I, S_TO_SI };
 
-enum { XXX, OR, AND, EQ, NE, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
+enum { OR = 1, AND, EQ, NE, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
 
 // operators grouped by precedence
 static struct op_def {
