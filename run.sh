@@ -18,4 +18,8 @@ build-all() {
   make
 }
 
+build-debug() {
+  make CFLAGS=-g 
+}
+
 "$@"

@@ -205,6 +205,16 @@ static void get_value(struct value *v)
   v->s = *endp ? arg : NULL;
 }
 
+// Converts an arg string to a value struct.  Assumes arg != NULL.
+static void parse_value(char* arg, struct value *v)
+{
+  char *endp;
+  v->i = strtoll(arg, &endp, 10);
+  // if non-NULL, there's still stuff left, and it's a string.  Otherwise no
+  // string.
+  v->s = *endp ? arg : NULL;
+}
+
 // check if v matches a token, and consume it if so
 static int match(struct value *v, char *tok)
 {
@@ -286,6 +296,19 @@ static void parse_op(struct value *lhs, struct value *tok, struct op *op)
   }
 }
 
+// 'lhs' is mutated.
+static void eval_expr(struct value *lhs, int min_prec)
+{
+  char *token;
+  // could this be NULL?
+  char **argv = toys.optargs;
+  while (token = *argv) {
+    //token = *argv;
+    printf("token: %s\n", token);
+    argv++;
+  }
+}
+
 void expr_main(void)
 {
   struct value tok, ret = {0};
@@ -295,7 +318,10 @@ void expr_main(void)
   TT.argidx = 0;
 
   get_value(&tok); // warm up the parser with the initial value
-  parse_op(&ret, &tok, 0);
+
+  eval_expr(&ret, 1);
+
+  //parse_op(&ret, &tok, 0);
 
   // final token should be end of expression
   if (!tok.s || *tok.s) error_exit("syntax error");
