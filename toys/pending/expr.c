@@ -311,8 +311,6 @@ void advance() {
 // 'lhs' is mutated.
 static void eval_expr(struct value *lhs, int min_prec)
 {
-  //struct value lhs;
-
   if (!TT.tok) syntax_error("Unexpected end of expression");
 
   // parse LHS atom
@@ -327,27 +325,25 @@ static void eval_expr(struct value *lhs, int min_prec)
     advance();
   }
 
+  // evaluate operators until precedence is too low.
   struct value rhs;
-
-  // parse RHS expressions until precedence
   while (TT.tok) {
-    printf("token: %s\n", TT.tok);
-    char prec;
+    //printf("token: %s\n", TT.tok);
     struct op2 *o = OPS;
-    while (o->calc) {
+    while (o->calc) {  // TT.tok is an operator token, look it up
       if (!strcmp(TT.tok, o->tok)) {
-        printf("OP %s, PREC %d\n", o->tok, o->prec);
+        //printf("OP %s, PREC %d\n", o->tok, o->prec);
         break;
       }
       o++;
     }
     if (!o->calc) {
-      printf("PREC lookup failed for %s\n", TT.tok);
-      //break;
+      printf("Not an operator: %s\n", TT.tok);
+      break;
     }
     if (o->prec < min_prec) {
       printf("stopping PREC loop at %s\n", TT.tok);
-      //break;
+      break;
     }
     advance();
 
@@ -368,6 +364,8 @@ void expr_main(void)
 
   advance();
   eval_expr(&ret, 1);
+
+  if (TT.tok) syntax_error("Got extra input: %s\n");//, TT.tok);
 
   //parse_op(&ret, &tok, 0);
 
