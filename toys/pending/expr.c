@@ -262,12 +262,12 @@ void syntax_error(char *msg, ...) {
 
 // 4 different signatures of operators.  S = string, I = int, SI = string or
 // int.
-enum { SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
+enum { XX, SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
 
-enum { SENTINEL, OR, AND, EQ, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
+enum { XXX, OR, AND, EQ, NE, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
 
 // operators grouped by precedence
-static struct op {
+static struct op_def {
   char *tok;
   char prec;
   // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
@@ -328,7 +328,7 @@ static void eval_expr(struct value *ret, int min_prec)
   // Evaluate RHS and apply operator until precedence is too low.
   struct value rhs;
   while (TT.tok) {
-    struct op *o = OPS;
+    struct op_def *o = OPS;
     while (o->calc) {  // Look up the precedence of operator TT.tok
       if (!strcmp(TT.tok, o->tok)) break;
       o++;
@@ -350,6 +350,72 @@ static void eval_expr(struct value *ret, int min_prec)
       ret->s = NULL;  // not strings
     }
     maybe_fill_string(ret); // integer results might be used as strings
+
+    // Operators in a precedence class also have the same type coercion rules.
+
+    int sig = 0;
+    int op = 0;
+
+    // x = a OP b, and tri is for cmp()
+    long long a, b, x, tri;
+
+    // should arithmetic expressions always set the string part too?
+    switch (sig) {
+
+    case SI_TO_SI:
+      switch (op) {
+      case OR:  or (ret, &rhs); break;
+      case AND: and(ret, &rhs); break;
+      }
+      break;  
+
+    case SI_TO_I:
+      // comparisons try ints first, then strings.
+      // If they're not both ints, then make sure they are both strings.  A
+      // bare int can be the result of arithmetic.
+      /*
+      if (!check_int(ret) || !check_int(&rhs)) {
+        to_string(ret);
+        to_string(&rhs);
+      }
+      */
+      // cmp
+      switch (op) {
+      case EQ:  x = tri == 0; break;
+      case NE:  x = tri != 0; break;
+      case GT:  x = tri >  0; break;
+      case GTE: x = tri >= 0; break;
+      case LT:  x = tri <  0; break;
+      case LTE: x = tri <= 0; break;
+      }
+      // now set
+      break;
+
+    case I_TO_I:
+      /*
+      if (!check_int(ret) || !check_int(&rhs)) {
+        error_exit("non-integer argument");
+      }
+      */
+      switch (op) {
+      case ADD:  x = a + b; break;
+      case SUB:  x = a - b; break;
+      case MUL:  x = a * b; break;
+      case DIVI: x = a / b; break;
+      case MOD:  x = a % b; break;
+      }
+
+      break;
+
+    case S_TO_SI:
+      // coerce both args to strings
+      // call re(s1, s2, ret) function, getting value
+      /*
+      to_string(ret);
+      to_string(&rhs);
+      */
+      break;
+    }
   }
 }
 
