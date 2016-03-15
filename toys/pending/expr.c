@@ -242,7 +242,7 @@ static struct op {
 // operators grouped by precedence
 static struct op2 {
   char *tok;
-  unsigned char prec;
+  char prec;
 
   // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
   void (*calc)(struct value *lhs, struct value *rhs);
@@ -296,17 +296,44 @@ static void parse_op(struct value *lhs, struct value *tok, struct op *op)
   }
 }
 
+void syntax_error(char *msg) {
+  printf("%s\n", msg);
+  exit(2);
+}
+
 // 'lhs' is mutated.
 static void eval_expr(struct value *lhs, int min_prec)
 {
-  char *token;
-  // could this be NULL?
   char **argv = toys.optargs;
+  char *token = *argv;
+  //struct value lhs;
+
+  if (!token) {
+    syntax_error("Unexpected end of expression");
+  }
+
+  if (!strcmp(token, "(")) {
+    argv++;  // consume (
+    eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
+    token = *argv;
+    if (!token) {
+      syntax_error("Expected )");
+    }
+    if (strcmp(token, ")")) {
+      syntax_error("Expected ) but got");
+    }
+    argv++;  // consume )
+  } else {
+    parse_value(token, lhs);
+    argv++;
+  }
+
   while (token = *argv) {
     //token = *argv;
     printf("token: %s\n", token);
     argv++;
 
+    char prec;
     struct op2 *o = OPS;
     while (o->calc) {
       if (!strcmp(token, o->tok)) {
@@ -315,6 +342,15 @@ static void eval_expr(struct value *lhs, int min_prec)
       }
       o++;
     }
+    if (!o->calc) {
+      printf("PREC lookup failed for %s\n", token);
+      //break;
+    }
+    if (o->prec < min_prec) {
+      printf("stopping PREC loop at %s\n", token);
+      //break;
+    }
+
   }
 }
 
@@ -333,7 +369,7 @@ void expr_main(void)
   //parse_op(&ret, &tok, 0);
 
   // final token should be end of expression
-  if (!tok.s || *tok.s) error_exit("syntax error");
+  //if (!tok.s || *tok.s) error_exit("syntax error");
 
   if (ret.s) printf("%s\n", ret.s);
   else printf("%lld\n", ret.i);
