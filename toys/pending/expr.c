@@ -48,6 +48,7 @@ config EXPR
 
 GLOBALS(
   int argidx;
+  char* tok; // current token, not on the stack since recursive calls mutate it
 )
 
 // Scalar value.
@@ -301,56 +302,56 @@ void syntax_error(char *msg) {
   exit(2);
 }
 
+// point TT.tok at the next token.  It is NULL to indicate the end.
+void advance() {
+  TT.tok = *toys.optargs;
+  toys.optargs++;
+}
+
 // 'lhs' is mutated.
 static void eval_expr(struct value *lhs, int min_prec)
 {
   char **argv = toys.optargs;
-  char *token = *argv;
+  //char *token = *argv;
   //struct value lhs;
 
-  if (!token) {
+  if (!TT.tok) {
     syntax_error("Unexpected end of expression");
   }
 
-  if (!strcmp(token, "(")) {
-    argv++;  // consume (
+  if (!strcmp(TT.tok, "(")) {
+    advance();  // consume (
     eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
-    token = *argv;
-    if (!token) {
-      syntax_error("Expected )");
-    }
-    if (strcmp(token, ")")) {
-      syntax_error("Expected ) but got");
-    }
-    argv++;  // consume )
+    if (!TT.tok)             syntax_error("Expected )");
+    if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
+    advance();
   } else {
-    parse_value(token, lhs);
-    argv++;
+    parse_value(TT.tok, lhs);
+    advance();
   }
 
-  while (token = *argv) {
+  while (TT.tok) {
     //token = *argv;
-    printf("token: %s\n", token);
-    argv++;
-
+    printf("token: %s\n", TT.tok);
     char prec;
     struct op2 *o = OPS;
     while (o->calc) {
-      if (!strcmp(token, o->tok)) {
+      if (!strcmp(TT.tok, o->tok)) {
         printf("OP %s, PREC %d\n", o->tok, o->prec);
         break;
       }
       o++;
     }
     if (!o->calc) {
-      printf("PREC lookup failed for %s\n", token);
+      printf("PREC lookup failed for %s\n", TT.tok);
       //break;
     }
     if (o->prec < min_prec) {
-      printf("stopping PREC loop at %s\n", token);
+      printf("stopping PREC loop at %s\n", TT.tok);
       //break;
     }
 
+    advance();
   }
 }
 
@@ -364,6 +365,7 @@ void expr_main(void)
 
   get_value(&tok); // warm up the parser with the initial value
 
+  advance();
   eval_expr(&ret, 1);
 
   //parse_op(&ret, &tok, 0);
