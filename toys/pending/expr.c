@@ -148,12 +148,14 @@ static void re(struct value *lhs, struct value *rhs)
       lhs->valid_int = 1;
       lhs->s = 0;
     }
-  } else {
-    if (!rp.re_nsub) {
+  } else { // no match
+    if (rp.re_nsub > 0)
+      lhs->s = "";
+    else {
       lhs->i = 0;
       lhs->valid_int = 1;
       lhs->s = 0;
-    } else lhs->s = "";
+    }
   }
 }
 
@@ -253,6 +255,12 @@ void syntax_error(char *msg, ...) {
   } else
     error_exit("syntax error");
 }
+
+// 4 different signatures of operators.  S = string, I = int, SI = string or
+// int.
+enum { SI_TO_SI, SI_TO_I, I_TO_I, S_TO_SI };
+
+enum { SENTINEL, OR, AND, EQ, GT, GTE, LT, LTE, ADD, SUB, MUL, DIVI, MOD, RE };
 
 // operators grouped by precedence
 static struct op {
