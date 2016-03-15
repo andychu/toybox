@@ -32,32 +32,23 @@ testing "string becomes integer" "expr ab21xx : '[^0-9]*\([0-9]*\)' + 3" \
 testing "integer comparison" "expr -3 \< -2" "1\n" "" ""
 testing "string comparison" "expr -3 \< -2s" "0\n" "" ""
 testing "integer expr comparison" "expr 2 - 5 \< -2" "1\n" "" ""
-# result of integer arithmetic is corcsed to string for comparison
+# result of arithmetic can subsequently be compared as a string
 testing "string expr comparison" "expr 2 - 5 \< -2s" "0\n" "" ""
 
 testing "parens around literal" "expr \( a \)" "a\n" "" ""
 
-# BUG: exits early, so gives 2?
 testing "exit code when true" "expr a; echo \$?" "a\n0\n" "" ""
-
 testing "exit code when false" "expr 0; echo \$?" "0\n1\n" "" ""
-
 testing "exit code with syntax error" "expr \(; echo \$?" "2\n" "" ""
-
-# exit 0 instead of 1, because toybox doesn't test the character 0.  POSIX is
-# ambiguous, but since expr has a lot of type coercion, exiting with 1 makes
-# sense.
 testing "exit code when evaluating to 0" "expr -1 + 1; echo \$?" "0\n1\n" "" ""
 
-# BUG: seg fault
+# BUG: segfaults because '3' is coerced to integer and regexc gets NULL
 testing "regex segfault" "expr 3 : '\(.\)'" "3\n" "" ""
 
-testing "no expression" "expr; echo \$?" "2\n" "" ""
-
 # syntax errors
-testing "()" "expr \( \); echo \$?" "2\n" "" ""
+testing "no expression" "expr; echo \$?" "2\n" "" ""
+testing "empty ()" "expr \( \); echo \$?" "2\n" "" ""
 testing "missing )" "expr \( 1; echo \$?" "2\n" "" ""
 testing "missing outer )" "expr \( 1 + \( 2 \* 3 \); echo \$?" "2\n" "" ""
 testing "bad operator" "expr 1 @ 2; echo \$?" "2\n" "" ""
 testing "adjacent literals" "expr 1 2; echo \$?" "2\n" "" ""
-

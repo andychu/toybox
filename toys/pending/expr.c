@@ -45,7 +45,6 @@ config EXPR
 #define FOR_expr
 #include "toys.h"
 
-
 GLOBALS(
   char* tok; // current token, not on the stack since recursive calls mutate it
 )
@@ -198,7 +197,6 @@ static void parse_value(char* arg, struct value *v)
 static struct op {
   char *tok;
   char prec;
-
   // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
   void (*calc)(struct value *lhs, struct value *rhs);
 } OPS[] = {
