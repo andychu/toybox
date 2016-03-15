@@ -49,41 +49,94 @@ GLOBALS(
   char* tok; // current token, not on the stack since recursive calls mutate it
 )
 
-// Scalar value.
-// If s is NULL, the value is an integer (i).
-// If s is not NULL, the value is a string (s).
+// Values that expression operate over.
+// s always points to an argv string, so we don't worry about memory
+// allocation.
 struct value {
   char *s;
   long long i;
+  char valid_int;  // can we use the .i field?
 };
+
+/*
+  // NOTE: because of the 'ret' overwriting, this is awkward.
+  // I think we need to have the enum.  char tag == 0 for int and 1 for string.
+  // and then every operator coerces?
+  int get_int(v, &i)
+  char[str]
+
+  // re and cmp coerce_str
+  // arithmetic does coerce int
+  // this also makes memory management easier.  use stack buffers.
+  // it might copy v->s into the buf.  That's fine.
+  
+  // is_false: check 'which' and do
+  get_str(v, s);
+
+  // note: he allows ot never free with xmalloc?  You can just xmalloc every
+  // time?
+  set_int(v, i);
+  set_str(v, s);
+*/
 
 // check if v is the integer 0 or the empty string
 static int is_zero(struct value *v)
 {
-  return v->s ? !*v->s : !v->i;
+  //return v->s ? !*v->s : !v->i;
+  return v->valid_int ? v->i == 0 : !*v->s;
 }
 
+// Converts the value to a number and returns 1, or returns 0 if it can't be.
+void maybe_fill_int(struct value *v) {
+  //if (v->valid_int) return;
+  char *endp;
+  v->i = strtoll(v->s, &endp, 10);
+  // If non-NULL, there are still characters left, and it's a string.
+  v->valid_int = !*endp;
+  //printf("%s is valid?  %d\n", v->s, v->valid_int);
+}
+
+// Converts a number back to a string, if it isn't already one.
+void maybe_fill_string(struct value *v) {
+  //if (v->s) return;  // nothing to do
+  static char num_buf[21];
+  snprintf(num_buf, sizeof(num_buf), "%lld", v->i);
+  v->s = num_buf;  // BUG!
+}
+
+/*
 static char *num_to_str(long long num)
 {
   static char num_buf[21];
   snprintf(num_buf, sizeof(num_buf), "%lld", num);
   return num_buf;
 }
+*/
 
 static int cmp(struct value *lhs, struct value *rhs)
 {
+  if (lhs->valid_int && rhs->valid_int) {
+    return lhs->i - rhs->i;
+  } else {
+    return strcmp(lhs->s, rhs->s);
+  }
+  /*
   if (lhs->s || rhs->s) {
     // at least one operand is a string
     char *ls = lhs->s ? lhs->s : num_to_str(lhs->i);
     char *rs = rhs->s ? rhs->s : num_to_str(rhs->i);
+    // BUG: ls and rs are always the same static buffer!!!!
     return strcmp(ls, rs);
   } else return lhs->i - rhs->i;
+  */
 }
 
+// Returns int position or string capture.
 static void re(struct value *lhs, struct value *rhs)
 {
   regex_t rp;
   regmatch_t rm[2];
+  //printf("REGEX lhs %s  rhs %s\n", lhs->s, rhs->s);
 
   xregcomp(&rp, rhs->s, 0);
   // BUG: lhs->s is NULL when it looks like an integer, causing a segfault.
@@ -92,11 +145,13 @@ static void re(struct value *lhs, struct value *rhs)
       lhs->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, lhs->s+rm[1].rm_so);
     else {
       lhs->i = rm[0].rm_eo;
+      lhs->valid_int = 1;
       lhs->s = 0;
     }
   } else {
     if (!rp.re_nsub) {
       lhs->i = 0;
+      lhs->valid_int = 1;
       lhs->s = 0;
     } else lhs->s = "";
   }
@@ -104,33 +159,28 @@ static void re(struct value *lhs, struct value *rhs)
 
 static void mod(struct value *lhs, struct value *rhs)
 {
-  if (lhs->s || rhs->s) error_exit("non-integer argument");
-  if (is_zero(rhs)) error_exit("division by zero");
+  if (rhs->i == 0) error_exit("division by zero");
   lhs->i %= rhs->i;
 }
 
 static void divi(struct value *lhs, struct value *rhs)
 {
-  if (lhs->s || rhs->s) error_exit("non-integer argument");
-  if (is_zero(rhs)) error_exit("division by zero");
+  if (rhs->i == 0) error_exit("division by zero");
   lhs->i /= rhs->i;
 }
 
 static void mul(struct value *lhs, struct value *rhs)
 {
-  if (lhs->s || rhs->s) error_exit("non-integer argument");
   lhs->i *= rhs->i;
 }
 
 static void sub(struct value *lhs, struct value *rhs)
 {
-  if (lhs->s || rhs->s) error_exit("non-integer argument");
   lhs->i -= rhs->i;
 }
 
 static void add(struct value *lhs, struct value *rhs)
 {
-  if (lhs->s || rhs->s) error_exit("non-integer argument");
   lhs->i += rhs->i;
 }
 
@@ -194,7 +244,7 @@ static void parse_value(char* arg, struct value *v)
 }
 
 void syntax_error(char *msg, ...) {
-  if (0) { // detailed message for debugging.  TODO: add CFG_ var to enable
+  if (1) { // detailed message for debugging.  TODO: add CFG_ var to enable
     va_list va;
     va_start(va, msg);
     verror_msg(msg, 0, va);
@@ -211,13 +261,22 @@ static struct op {
   // calculate "lhs op rhs" (e.g. lhs + rhs) and store result in lhs
   void (*calc)(struct value *lhs, struct value *rhs);
 } OPS[] = {
+  // uses is_zero
   {"|", 1, or  },
   {"&", 2, and },
+
+  // all of these call cmp, so they use .i or .s in lhs.i, give 0 or 1 in lhs.i
+  // they might coerce an int to string.
   {"=", 3, eq  }, {"==", 3, eq  }, {">",  3, gt  }, {">=", 3, gte },
   {"<", 3, lt  }, {"<=", 3, lte }, {"!=", 3, ne  },
+
+  // requires ints in lhs.i and rhs.i, use lhs.i.
   {"+", 4, add }, {"-",  4, sub },
   {"*", 5, mul }, {"/",  5, divi }, {"%", 5, mod },
+
+  // requires strings
   {":", 6, re  },
+
   {"",  0, NULL}, // sentinel
 };
 
@@ -249,7 +308,8 @@ static void eval_expr(struct value *ret, int min_prec)
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got %s", TT.tok);
     advance(); // consume )
   } else { // simple literal
-    parse_value(TT.tok, ret);
+    ret->s = TT.tok;  // everything is a valid string
+    maybe_fill_int(ret);
     advance();
   }
 
@@ -262,11 +322,22 @@ static void eval_expr(struct value *ret, int min_prec)
       o++;
     }
     if (!o->calc) break; // Not an operator (extra input will fail later)
-    if (o->prec < min_prec) break; // Precedence too low, pop a stack frame
+    char prec = o->prec;
+    if (prec < min_prec) break; // Precedence too low, pop a stack frame
     advance();
 
-    eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
+    eval_expr(&rhs, prec + 1); // Evaluate RHS, with higher min precedence
+
+    maybe_fill_int(ret);
+    maybe_fill_int(&rhs);
+    if (prec == 4 || prec == 5) { // arithmetic error checking
+      if (!ret->valid_int || !rhs.valid_int) error_exit("non-integer argument");
+    }
     o->calc(ret, &rhs); // Apply operator, setting 'ret'.
+    if (prec == 4 || prec == 5) {
+      ret->s = NULL;  // not strings
+    }
+    maybe_fill_string(ret); // integer results might be used as strings
   }
 }
 
@@ -280,8 +351,8 @@ void expr_main(void)
 
   if (TT.tok) syntax_error("Unexpected extra input '%s'\n", TT.tok);
 
-  if (ret.s) printf("%s\n", ret.s);
-  else printf("%lld\n", ret.i);
+  if (ret.valid_int) printf("%lld\n", ret.i);
+  else printf("%s\n", ret.s);
 
   exit(is_zero(&ret));
 }
