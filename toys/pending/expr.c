@@ -306,6 +306,15 @@ static void eval_expr(struct value *lhs, int min_prec)
     //token = *argv;
     printf("token: %s\n", token);
     argv++;
+
+    struct op2 *o = OPS;
+    while (o->calc) {
+      if (!strcmp(token, o->tok)) {
+        printf("OP %s, PREC %d\n", o->tok, o->prec);
+        break;
+      }
+      o++;
+    }
   }
 }
 
