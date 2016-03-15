@@ -231,13 +231,13 @@ static void eval_expr(struct value *ret, int min_prec)
 
   // Evaluate LHS atom, setting 'ret'.
   if (!strcmp(TT.tok, "(")) { // parenthesized expression
-    advance(); // consume (
-    eval_expr(ret, 1); // We're inside ( ), so start with min_prec = 1
+    advance();                // consume (
+    eval_expr(ret, 1);        // We're inside ( ), so min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got %s", TT.tok);
-    advance(); // consume )
-  } else { // simple literal
-    ret->s = TT.tok; // everything starts off as a string
+    advance();                // consume )
+  } else {                    // simple literal
+    ret->s = TT.tok;          // all values start as strings
     advance();
   }
 
@@ -245,7 +245,7 @@ static void eval_expr(struct value *ret, int min_prec)
   struct value rhs;
   while (TT.tok) {
     struct op_def *o = OPS;
-    while (o->tok) { // Look up the precedence of operator TT.tok
+    while (o->tok) { // Look up operator
       if (!strcmp(TT.tok, o->tok)) break;
       o++;
     }
@@ -254,7 +254,7 @@ static void eval_expr(struct value *ret, int min_prec)
     advance();
 
     eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
-    eval_op(o, ret, &rhs);
+    eval_op(o, ret, &rhs); // sets 'ret'
   }
 }
 
