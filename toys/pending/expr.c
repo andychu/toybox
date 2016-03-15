@@ -211,7 +211,7 @@ static struct op {
 };
 
 void syntax_error(char *msg, ...) {
-  if (1) { // detailed message for debugging
+  if (0) { // detailed message for debugging.  TODO: add CFG_ var to enable
     va_list va;
     va_start(va, msg);
     verror_msg(msg, 0, va);
