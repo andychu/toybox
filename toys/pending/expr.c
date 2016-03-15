@@ -298,7 +298,7 @@ static void parse_op(struct value *lhs, struct value *tok, struct op *op)
 }
 
 void syntax_error(char *msg) {
-  printf("%s\n", msg);
+  fprintf(stderr, "%s\n", msg);
   exit(2);
 }
 
@@ -319,7 +319,7 @@ static void eval_expr(struct value *lhs, int min_prec)
     eval_expr(lhs, 1);  // inside ( ) means we start with min_prec = 1
     if (!TT.tok)             syntax_error("Expected )");
     if (strcmp(TT.tok, ")")) syntax_error("Expected ) but got");
-    advance();
+    advance(); // consume )
   } else { // simple literal
     parse_value(TT.tok, lhs);
     advance();
@@ -337,18 +337,12 @@ static void eval_expr(struct value *lhs, int min_prec)
       }
       o++;
     }
-    if (!o->calc) {
-      printf("Not an operator: %s\n", TT.tok);
-      break;
-    }
-    if (o->prec < min_prec) {
-      printf("stopping PREC loop at %s\n", TT.tok);
-      break;
-    }
+    if (!o->calc) break; // not an operator (extra input will fail later)
+    if (o->prec < min_prec) break; // precedence too low for this frame
     advance();
 
-    eval_expr(&rhs, o->prec + 1); // evaluate RHS
-    o->calc(lhs, &rhs); // LHS mutated
+    eval_expr(&rhs, o->prec + 1); // get RHS value
+    o->calc(lhs, &rhs); // apply operator
   }
 }
 

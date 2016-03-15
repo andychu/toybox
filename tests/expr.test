@@ -47,14 +47,12 @@ testing "exit code with syntax error" "expr \(; echo \$?" "2\n" "" ""
 # exit 0 instead of 1, because toybox doesn't test the character 0.  POSIX is
 # ambiguous, but since expr has a lot of type coercion, exiting with 1 makes
 # sense.
-testing "exit code with expression giving 0" "expr -1 + 1; echo \$?" "1\n" "" ""
+testing "exit code when evaluating to 0" "expr -1 + 1; echo \$?" "0\n1\n" "" ""
 
 # BUG: seg fault
 testing "regex segfault" "expr 3 : '\(.\)'" "3\n" "" ""
 
-# NOTE: coreutils expr considers no expression a syntax error, so the return
-# value is 2 instead of 1.
-testing "no expression" "expr; echo \$?" "\n1\n" "" ""
+testing "no expression" "expr; echo \$?" "2\n" "" ""
 
 # syntax errors
 testing "()" "expr \( \); echo \$?" "2\n" "" ""
