@@ -109,19 +109,20 @@ static int is_false(struct value *v)
 }
 
 // 'ret' is filled with a string capture or int match position.
-static void re(char *target, char *pat, struct value *ret)
+static void re(char *target, char *pattern, struct value *ret)
 {
-  regex_t rp;
-  regmatch_t rm[2];
+  regex_t pat;
+  regmatch_t m[2];
 
-  xregcomp(&rp, pat, 0);
-  if (!regexec(&rp, target, 2, rm, 0) && rm[0].rm_so == 0) { // matched
-    if (rp.re_nsub > 0 && rm[1].rm_so >= 0) // has capture
-      ret->s = xmprintf("%.*s", rm[1].rm_eo - rm[1].rm_so, target+rm[1].rm_so);
+  xregcomp(&pat, pattern, 0);
+  if (!regexec(&pat, target, 2, m, 0) && m[0].rm_so == 0) { // match at pos 0
+    regmatch_t* g1 = &m[1]; // group capture 1
+    if (pat.re_nsub > 0 && g1->rm_so >= 0) // has capture
+      ret->s = xmprintf("%.*s", g1->rm_eo - g1->rm_so, target + g1->rm_so);
     else
-      assign_int(ret, rm[0].rm_eo);
+      assign_int(ret, m[0].rm_eo);
   } else { // no match
-    if (rp.re_nsub > 0) // has capture
+    if (pat.re_nsub > 0) // has capture
       ret->s = "";
     else
       assign_int(ret, 0);
