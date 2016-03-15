@@ -1,5 +1,6 @@
 /* expr.c - evaluate expression
  *
+ * Copyright 2016 Google Inc.
  * Copyright 2013 Daniel Verkamp <daniel@drv.nu>
  *
  * http://pubs.opengroup.org/onlinepubs/9699919799/utilities/expr.html
@@ -254,18 +255,17 @@ static void eval_expr(struct value *ret, int min_prec)
     advance();
 
     eval_expr(&rhs, o->prec + 1); // Evaluate RHS, with higher min precedence
-    eval_op(o, ret, &rhs); // sets 'ret'
+    eval_op(o, ret, &rhs); // Apply operator, setting 'ret'
   }
 }
 
 void expr_main(void)
 {
   struct value ret = {0};
-  toys.exitval = 2; // if exiting early, indicate invalid expression
+  toys.exitval = 2; // if exiting early, indicate error
 
   advance(); // initialize global token
   eval_expr(&ret, 1);
-
   if (TT.tok) syntax_error("Unexpected extra input '%s'\n", TT.tok);
 
   if (ret.s) printf("%s\n", ret.s);
