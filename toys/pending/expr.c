@@ -48,6 +48,7 @@ config EXPR
 
 GLOBALS(
   char* tok; // current token, not on the stack since recursive calls mutate it
+  struct arg_list *allocated;  // list of strings allocated during evaluation
 )
 
 // Scalar value.  If s != NULL, it's a string, otherwise it's an int.
@@ -69,6 +70,14 @@ void syntax_error(char *msg, ...) {
 
 #define LONG_LONG_MAX_LEN 21
 
+// Keep track of an allocated string.
+void track_str(char* str) {
+  struct arg_list *node = xmalloc(sizeof(struct arg_list));
+  node->arg = str;
+  node->next = TT.allocated;
+  TT.allocated = node;
+}
+
 // Get the value as a string.
 void get_str(struct value *v, char** ret)
 {
@@ -77,6 +86,7 @@ void get_str(struct value *v, char** ret)
   else {
     *ret = xmalloc(LONG_LONG_MAX_LEN);
     snprintf(*ret, LONG_LONG_MAX_LEN, "%lld", v->i);
+    track_str(*ret); // free it later
   }
 }
 
@@ -118,9 +128,10 @@ static void re(char *target, char *pattern, struct value *ret)
   xregcomp(&pat, pattern, 0);
   if (!regexec(&pat, target, 2, m, 0) && m[0].rm_so == 0) { // match at pos 0
     regmatch_t* g1 = &m[1]; // group capture 1
-    if (pat.re_nsub > 0 && g1->rm_so >= 0) // has capture
+    if (pat.re_nsub > 0 && g1->rm_so >= 0) { // has capture
       ret->s = xmprintf("%.*s", g1->rm_eo - g1->rm_so, target + g1->rm_so);
-    else
+      track_str(ret->s); // free it later
+    } else
       assign_int(ret, m[0].rm_eo);
   } else { // no match
     if (pat.re_nsub > 0) // has capture
@@ -128,6 +139,7 @@ static void re(char *target, char *pattern, struct value *ret)
     else
       assign_int(ret, 0);
   }
+  regfree(&pat);
 }
 
 // 4 different signatures of operators.  S = string, I = int, SI = string or
@@ -271,5 +283,16 @@ void expr_main(void)
   if (ret.s) printf("%s\n", ret.s);
   else printf("%lld\n", ret.i);
 
-  exit(is_false(&ret));
+  int status = is_false(&ret);
+
+  // Free all the strings we allocated.
+  struct arg_list *h, *head = TT.allocated;
+  while (head) {
+    h = head;
+    head = head->next;
+    free(h->arg); // free the string
+    free(h); // free the node for tracking the string
+  }
+
+  exit(status);
 }
