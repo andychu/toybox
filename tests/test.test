@@ -57,10 +57,10 @@ arith_test()
 
 testing "-eq" "arith_test -eq" "e\n" "" ""
 testing "-ne" "arith_test -ne" "l\ng\n" "" ""
-testing "-gt" "arith_test -gt" "g\n" "" ""
-testing "-ge" "arith_test -ge" "e\ng\n" "" ""
 testing "-lt" "arith_test -lt" "l\n" "" ""
 testing "-le" "arith_test -le" "l\ne\n" "" ""
+testing "-gt" "arith_test -gt" "g\n" "" ""
+testing "-ge" "arith_test -ge" "e\ng\n" "" ""
 
 # test ! = -o a
 # test ! \( = -o a \)
