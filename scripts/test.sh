@@ -63,6 +63,7 @@ single()
     CMDNAME=$cmd  # .test file uses this
     cd_test_dir $cmd
     . "$TOPDIR"/tests/$cmd.test
+    [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
   done
 
   [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
@@ -87,6 +88,7 @@ all()
     then
       cd_test_dir $CMDNAME
       . $test_file
+      [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
     else
       echo "$CMDNAME disabled"
     fi
