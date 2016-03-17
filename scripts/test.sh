@@ -1,19 +1,25 @@
 #!/bin/bash
 #
 # Run toybox tests.
-#
-# Usage:
-#   scripts/test.sh [command]...
-#
-# Examples:
-#   $ scripts/test.sh all   # run tests for all commands
-#   $ scripts/test.sh commands grep sed   # run tests for these two commands
-#
-#   # Test 'grep' on the system, not toybox
-#   $ TEST_HOST=1 scripts/test.sh commands grep 
-#
 # TODO:
 # - Document the test interface!  Can't exit 1.
+
+usage()
+{
+  cat <<EOF
+Usage:
+  scripts/test.sh all
+  scripts/test.sh single COMMAND...
+
+Examples:
+  $ scripts/test.sh all               # run tests for all commands
+  $ scripts/test.sh single grep sed   # run tests for these two commands
+
+  # Test 'grep' on the system, not toybox
+  $ TEST_HOST=1 scripts/test.sh commands grep 
+EOF
+}
+
 
 [ -z "$TOPDIR" ] && TOPDIR="$(pwd)"
 
@@ -38,7 +44,7 @@ setup_test_env()
 }
 
 # Run tests for specific commands.
-commands()
+single()
 {
   # Build individual binaries
   [ -z "$TEST_HOST" ] &&
@@ -52,6 +58,8 @@ commands()
     CMDNAME=$cmd
     . "$TOPDIR"/tests/$cmd.test
   done
+
+  [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
 }
 
 # Run tests for all commands.
@@ -78,6 +86,8 @@ all()
       echo "$CMDNAME disabled"
     fi
   done
+
+  [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
 }
 
 # Adapted from scripts/genconfig
@@ -98,11 +108,13 @@ toys_with_source()
   #grep -o '/(.*)\.c$'
 }
 
-toys_with_tests() {
+toys_with_tests()
+{
   ls tests/*.test | sed -e 's;.*/\([0-9a-z_]\+\)\.test$;\1;'
 }
 
-audit() {
+audit()
+{
   toys_with_tests > generated/with-tests.txt
   toys_with_source > generated/with-source.txt
 
@@ -111,5 +123,11 @@ audit() {
   wc -l generated/with-*.txt
 }
 
-"$@"
-
+case $1 in
+  single|all)
+    "$@"
+    ;;
+  *)
+    usage
+    ;;
+esac

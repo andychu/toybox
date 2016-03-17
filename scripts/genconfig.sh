@@ -151,7 +151,7 @@ main() {
     [ "$NAME" == help ] && continue
     [ "$NAME" == install ] && continue
     echo -e "$NAME: $FILE *.[ch] lib/*.[ch]\n\tscripts/single.sh $NAME\n"
-    echo -e "test_$NAME:\n\tscripts/test.sh commands $NAME\n"
+    echo -e "test_$NAME:\n\tscripts/test.sh single $NAME\n"
     [ "${FILE/pending//}" != "$FILE" ] &&
       PENDING="$PENDING $NAME" ||
       WORKING="$WORKING $NAME"

@@ -64,7 +64,7 @@ optional()
 
 testing()
 {
-  NAME="$CMDNAME $1"
+  local NAME="$CMDNAME $1"
   [ -z "$1" ] && NAME=$2
 
   if [ $# -ne 5 ]
@@ -84,16 +84,16 @@ testing()
   echo -ne "$3" > expected
   echo -ne "$4" > input
   echo -ne "$5" | eval "$2" > actual
-  RETVAL=$?
+  local STATUS=$?
 
   # Catch segfaults
-  [ $RETVAL -gt 128 ] && [ $RETVAL -lt 255 ] &&
-    echo "exited with signal (or returned $RETVAL)" >> actual
+  [ $STATUS -gt 128 ] && [ $STATUS -lt 255 ] &&
+    echo "exited with signal (or returned $STATUS)" >> actual
  
   cmp expected actual > /dev/null 2>&1
   if [ $? -ne 0 ]
   then
-    FAILCOUNT=$[$FAILCOUNT+1]
+    FAILCOUNT=$(($FAILCOUNT+1))
     echo "$SHOWFAIL: $NAME"
     if [ -n "$VERBOSE" ]
     then
@@ -109,7 +109,9 @@ testing()
 
   [ -n "$DEBUG" ] && set +x
 
-  return $RETVAL
+  # Always succeed -- we don't want the exit code to depend on just the last
+  # "testing" statement.
+  return 0
 }
 
 # Recursively grab an executable and all the libraries needed to run it.
