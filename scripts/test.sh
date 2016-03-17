@@ -80,4 +80,36 @@ all()
   done
 }
 
+# Adapted from scripts/genconfig
+
+# Find names of commands that can be built standalone in these C files
+toys()
+{
+  grep 'TOY(.*)' "$@" \
+    | grep -v TOYFLAG_NOFORK \
+    | grep -v "0))" 
+    #| sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
+}
+
+# TODO: Is there a better way to extract these?
+toys_with_source()
+{
+  grep -l 'TOY(.*)' toys/*/*.c | sed -e 's;.*/\([0-9a-z_]\+\)\.c$;\1;' | sort
+  #grep -o '/(.*)\.c$'
+}
+
+toys_with_tests() {
+  ls tests/*.test | sed -e 's;.*/\([0-9a-z_]\+\)\.test$;\1;'
+}
+
+audit() {
+  toys_with_tests > generated/with-tests.txt
+  toys_with_source > generated/with-source.txt
+
+  diff -u generated/with-source.txt generated/with-tests.txt 
+
+  wc -l generated/with-*.txt
+}
+
 "$@"
+
