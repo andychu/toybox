@@ -1,5 +1,7 @@
 #!/bin/bash
-
+#
+# Generates generated/Config.in, generated/Config.probed, and .singlemake.
+#
 # This has to be a separate file from scripts/make.sh so it can be called
 # before menuconfig.  (It's called again from scripts/make.sh just to be sure.)
 
@@ -124,9 +126,6 @@ genconfig()
   done
 }
 
-probeconfig > generated/Config.probed || rm generated/Config.probed
-genconfig > generated/Config.in || rm generated/Config.in
-
 # Find names of commands that can be built standalone in these C files
 toys()
 {
@@ -134,24 +133,31 @@ toys()
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
 }
 
-WORKING=
-PENDING=
-toys toys/*/*.c | (
-while IFS=":" read FILE NAME
-do
-  [ "$NAME" == help ] && continue
-  [ "$NAME" == install ] && continue
-  echo -e "$NAME: $FILE *.[ch] lib/*.[ch]\n\tscripts/single.sh $NAME\n"
-  echo -e "test_$NAME:\n\tscripts/test.sh $NAME\n"
-  [ "${FILE/pending//}" != "$FILE" ] &&
-    PENDING="$PENDING $NAME" ||
-    WORKING="$WORKING $NAME"
-done > .singlemake &&
-echo -e "clean::\n\trm -f $WORKING $PENDING" >> .singlemake &&
-echo -e "list:\n\t@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)"\
-  >> .singlemake &&
-echo -e "list_working:\n\t@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)" \
-  >> .singlemake &&
-echo -e "list_pending:\n\t@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)" \
-  >> .singlemake
-)
+main() {
+  probeconfig > generated/Config.probed || rm generated/Config.probed
+  genconfig > generated/Config.in || rm generated/Config.in
+
+  WORKING=
+  PENDING=
+  toys toys/*/*.c | (
+  while IFS=":" read FILE NAME
+  do
+    [ "$NAME" == help ] && continue
+    [ "$NAME" == install ] && continue
+    echo -e "$NAME: $FILE *.[ch] lib/*.[ch]\n\tscripts/single.sh $NAME\n"
+    echo -e "test_$NAME:\n\tscripts/test.sh $NAME\n"
+    [ "${FILE/pending//}" != "$FILE" ] &&
+      PENDING="$PENDING $NAME" ||
+      WORKING="$WORKING $NAME"
+  done > .singlemake &&
+  echo -e "clean::\n\trm -f $WORKING $PENDING" >> .singlemake &&
+  echo -e "list:\n\t@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)"\
+    >> .singlemake &&
+  echo -e "list_working:\n\t@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)" \
+    >> .singlemake &&
+  echo -e "list_pending:\n\t@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)" \
+    >> .singlemake
+  )
+}
+
+main "$@"
