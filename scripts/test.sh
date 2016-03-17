@@ -20,18 +20,22 @@ Examples:
 EOF
 }
 
-
 [ -z "$TOPDIR" ] && TOPDIR="$(pwd)"
 
 trap 'kill $(jobs -p) 2>/dev/null; exit 1' INT
 
-rm -rf generated/testdir
-mkdir -p generated/testdir/testdir
+cd_test_dir()
+{
+  local cmd=$1
+  local test_dir=$TOPDIR/generated/testdir/test_$cmd
+  rm -rf $test_dir
+  mkdir -p $test_dir
+  cd $test_dir
+}
 
 setup_test_env()
 {
   PATH="$TOPDIR/generated/testdir:$PATH"
-  cd generated/testdir/testdir
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.
@@ -46,16 +50,18 @@ setup_test_env()
 # Run tests for specific commands.
 single()
 {
-  # Build individual binaries
+  # Build individual binaries, e.g. generated/testdir/expr
   [ -z "$TEST_HOST" ] &&
     PREFIX=generated/testdir/ scripts/single.sh "$@" || exit 1
 
   setup_test_env
 
+  # NOTE: tests dir is not cleared
   # Run tests for the given commands
   for cmd in "$@"
   do
-    CMDNAME=$cmd
+    CMDNAME=$cmd  # .test file uses this
+    cd_test_dir $cmd
     . "$TOPDIR"/tests/$cmd.test
   done
 
@@ -79,8 +85,7 @@ all()
 
     if [ -h ../$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
-      # clear the test dir
-      cd .. && rm -rf testdir && mkdir testdir && cd testdir || exit 1
+      cd_test_dir $CMDNAME
       . $test_file
     else
       echo "$CMDNAME disabled"
@@ -122,6 +127,10 @@ audit()
 
   wc -l generated/with-*.txt
 }
+
+# TODO: Use a different location for the binaries?
+rm -rf generated/testdir
+mkdir -p generated/testdir
 
 case $1 in
   single|all)
