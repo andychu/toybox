@@ -61,7 +61,7 @@ distclean: clean
 test: tests
 
 tests:
-	scripts/test.sh
+	scripts/test.sh all
 
 help::
 	@echo  '  toybox          - Build toybox.'

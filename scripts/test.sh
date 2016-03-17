@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# Run toybox tests.
+#
+# Usage:
+#   scripts/test.sh [command]...
+#
+# Examples:
+#   $ scripts/test.sh all   # run tests for all commands
+#   $ scripts/test.sh commands grep sed   # run tests for these two commands
+#
+#   # Test 'grep' on the system, not toybox
+#   $ TEST_HOST=1 scripts/test.sh commands grep 
+#
+# TODO:
+# - Document the test interface!  Can't exit 1.
 
 [ -z "$TOPDIR" ] && TOPDIR="$(pwd)"
 
@@ -7,43 +22,62 @@ trap 'kill $(jobs -p) 2>/dev/null; exit 1' INT
 rm -rf generated/testdir
 mkdir -p generated/testdir/testdir
 
-if [ -z "$TEST_HOST" ]
-then
-  if [ $# -ne 0 ]
+setup_test_env()
+{
+  PATH="$TOPDIR/generated/testdir:$PATH"
+  cd generated/testdir/testdir
+  export LC_COLLATE=C
+
+  # Library functions used by .test scripts, e.g. 'testing'.
+  . "$TOPDIR"/scripts/runtest.sh
+
+  if [ -f "$TOPDIR/generated/config.h" ]
   then
-    PREFIX=generated/testdir/ scripts/single.sh "$@" || exit 1
-  else
-    make install_flat PREFIX=generated/testdir || exit 1
+    export OPTIONFLAGS=:$(echo $(sed -nr 's/^#define CFG_(.*) 1/\1/p' "$TOPDIR/generated/config.h") | sed 's/ /:/g')
   fi
-fi
+}
 
-cd generated/testdir
-PATH="$PWD:$PATH"
-cd testdir
-export LC_COLLATE=C
+# Run tests for specific commands.
+commands()
+{
+  # Build individual binaries
+  [ -z "$TEST_HOST" ] &&
+    PREFIX=generated/testdir/ scripts/single.sh "$@" || exit 1
 
-. "$TOPDIR"/scripts/runtest.sh
-[ -f "$TOPDIR/generated/config.h" ] && export OPTIONFLAGS=:$(echo $(sed -nr 's/^#define CFG_(.*) 1/\1/p' "$TOPDIR/generated/config.h") | sed 's/ /:/g')
+  setup_test_env
 
-if [ $# -ne 0 ]
-then
-  for i in "$@"
+  # Run tests for the given commands
+  for cmd in "$@"
   do
-    CMDNAME="${i##*/}"
-    CMDNAME="${CMDNAME%.test}"
-    . "$TOPDIR"/tests/$i.test
+    CMDNAME=$cmd
+    . "$TOPDIR"/tests/$cmd.test
   done
-else
-  for i in "$TOPDIR"/tests/*.test
+}
+
+# Run tests for all commands.
+all()
+{
+  # Build a toybox binary and create symlinks to it.
+  [ -z "$TEST_HOST" ] &&
+    make install_flat PREFIX=generated/testdir || exit 1
+
+  setup_test_env
+
+  # Run all tests
+  for test_file in "$TOPDIR"/tests/*.test
   do
-    CMDNAME="${i##*/}"
+    CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
-    if [ -h ../$CMDNAME ] || [ ! -z "$TEST_HOST" ]
+
+    if [ -h ../$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
+      # clear the test dir
       cd .. && rm -rf testdir && mkdir testdir && cd testdir || exit 1
-      . $i
+      . $test_file
     else
       echo "$CMDNAME disabled"
     fi
   done
-fi
+}
+
+"$@"
