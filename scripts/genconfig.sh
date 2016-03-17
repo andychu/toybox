@@ -1,9 +1,12 @@
 #!/bin/bash
 #
-# Generates
-# - kconfig files: generated/Config.in, generated/Config.probed
-# - CFLAGS used by scripts/make.sh: generated/cflags
-# - Makefile targets: .singlemake
+# Usage:
+#   scripts/genconfig.sh
+#
+# Generates these files:
+# - generated/Config.in, generated/Config.probed - kconfig source
+# - generated/cflags - CFLAGS used by scripts/make.sh:
+# - .singlemake - targets included by Makefile
 #
 # This has to be a separate file from scripts/make.sh so it can be called
 # before menuconfig.  (It's called again from scripts/make.sh just to be sure.)
