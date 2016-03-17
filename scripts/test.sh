@@ -83,7 +83,7 @@ all()
     CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
 
-    if [ -h ../$CMDNAME ] || [ -n "$TEST_HOST" ]
+    if [ -h $TOPDIR/generated/testdir/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       cd_test_dir $CMDNAME
       . $test_file
