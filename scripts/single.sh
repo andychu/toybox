@@ -1,6 +1,12 @@
 #!/bin/bash
-
-# Build a standalone toybox command
+#
+# Build a standalone toybox command.
+#
+# Usage:
+#   scripts/single.sh <command>...
+#
+# Example:
+#   $ scripts/single.sh grep sed  # Put grep and sed binaries in repo root
 
 if [ -z "$1" ]
 then

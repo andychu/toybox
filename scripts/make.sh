@@ -1,6 +1,9 @@
 #!/bin/bash
-
-# Grab default values for $CFLAGS and such.
+#
+# Build toybox.  Uses configured values for $CFLAGS and such.
+#
+# Usage:
+#   scripts/make.sh
 
 export LANG=c
 export LC_ALL=C
