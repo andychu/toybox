@@ -150,8 +150,6 @@ print_singlemake()
   local WORKING=
   local PENDING=
   local TEST_TARGETS=
-  # NOTE: The subshell is needed to mutate PENDING/WORKING/etc.
-  toys toys/*/*.c | (
   while IFS=":" read FILE NAME
   do
     [ "$NAME" == help ] && continue
@@ -197,7 +195,6 @@ list_working:
 list_pending:
 	@echo $(echo "$PENDING" | sort_words)
 EOF
-  )
 }
 
 main()
@@ -205,7 +202,7 @@ main()
   probeconfig > generated/Config.probed || rm generated/Config.probed
   genconfig > generated/Config.in || rm generated/Config.in
 
-  print_singlemake > .singlemake
+  toys toys/*/*.c | print_singlemake > .singlemake
 }
 
 main "$@"
