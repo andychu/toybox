@@ -5,10 +5,8 @@
 
 [ -f testing.sh ] && . testing.sh
 
-
-# BUG: Test is wrong!  File does not exist!!
-
 #testing "name" "command" "result" "infile" "stdin"
+
 testing "overflow" \
   'bzcat "$TOPDIR/tests/files/bzcat/overflow.bz2" 2>&1; echo $?' \
   "bzcat: bad data\n1\n" "" ""
