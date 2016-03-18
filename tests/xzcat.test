@@ -5,22 +5,33 @@
 
 [ -f testing.sh ] && . testing.sh
 
-#testing "name" "command" "result" "infile" "stdin"
-echo "hello" > file
-tar -cJf file.xz file
-# Get system xzcat
-xzcatExe=`which xzcat`
-$xzcatExe file.xz > xzcatOut
-testing "- decompresses a single file" "xzcat file.xz > Tempfile && echo "yes"; diff Tempfile xzcatOut && echo "yes"; rm -rf file* xzcatOut Tempfile" "yes\nyes\n" "" ""
+# TODO: Don't hard-code system paths here.  "which" doesn't work because PATH
+# is altered by the test harness.
+system_tar=/bin/tar
+# The test compares it against the system bzcat.
+# TODO: On Ubuntu, xzcat is in /usr/bin, while zcat is in /bin.
+system_xzcat=/usr/bin/xzcat
 
 #testing "name" "command" "result" "infile" "stdin"
-echo "hello" > file1
-echo "hi" > file2
-echo "Hi, Good morning !! I am a xzcat tester" > file3
+
+echo "hello" > file
+tar -cJf file.xz file
+
+$system_xzcat file.xz > expected_out
+testing "decompresses a single file" \
+  'xzcat file.xz > Tempfile && echo yes; diff Tempfile expected_out && echo yes; rm -rf file* expected_out Tempfile' \
+  "yes\nyes\n" "" ""
+
+echo "one" > file1
+echo "two" > file2
+echo "three" > file3
+
 tar -cJf file1.xz file1
 tar -cJf file2.xz file2
 tar -cJf file3.xz file3
-# Get system xzcat
-xzcatExe=`which xzcat`
-$xzcatExe file1.xz file2.xz file3.xz > xzcatOut
-testing "- decompresses multiple files" "xzcat file1.xz file2.xz file3.xz > Tempfile && echo "yes" ; diff Tempfile xzcatOut && echo "yes"; rm -rf file* xzcatOut Tempfile " "yes\nyes\n" "" ""
+
+$system_xzcat file1.xz file2.xz file3.xz > expected_out
+
+testing "decompresses multiple files" \
+  'xzcat file1.xz file2.xz file3.xz > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
+  "yes\nyes\n" "" ""
