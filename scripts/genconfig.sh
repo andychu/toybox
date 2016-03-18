@@ -150,6 +150,7 @@ print_singlemake()
   local WORKING=
   local PENDING=
   local TEST_TARGETS=
+  # NOTE: The subshell is needed to mutate PENDING/WORKING/etc.
   toys toys/*/*.c | (
   while IFS=":" read FILE NAME
   do
@@ -158,7 +159,7 @@ print_singlemake()
 
     local test_name=test_$NAME
     local build_name=$NAME
-    # 'make test' is already taken for running all tests.  The 'test' binary
+    # 'make test' is already taken for running all tests, so the 'test' binary
     # can be built with 'make test_bin'.
     [ "$NAME" == test ] && build_name=test_bin
 
@@ -199,7 +200,8 @@ EOF
   )
 }
 
-main() {
+main()
+{
   probeconfig > generated/Config.probed || rm generated/Config.probed
   genconfig > generated/Config.in || rm generated/Config.in
 
