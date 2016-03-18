@@ -149,15 +149,17 @@ print_singlemake()
 {
   local WORKING=
   local PENDING=
+  local TEST_TARGETS=
   toys toys/*/*.c | (
   while IFS=":" read FILE NAME
   do
     [ "$NAME" == help ] && continue
     [ "$NAME" == install ] && continue
 
+    local test_name=test_$NAME
     local build_name=$NAME
     # 'make test' is already taken for running all tests.  The 'test' binary
-    # can be built with 'make test_bin'
+    # can be built with 'make test_bin'.
     [ "$NAME" == test ] && build_name=test_bin
 
     # Print a build target and test target for each command.
@@ -165,7 +167,7 @@ print_singlemake()
 $build_name: $FILE *.[ch] lib/*.[ch]
 	scripts/single.sh $NAME
 
-test_$NAME:
+$test_name:
 	scripts/test.sh single $NAME
 
 EOF
@@ -173,10 +175,15 @@ EOF
     [ "${FILE/pending//}" != "$FILE" ] &&
       PENDING="$PENDING $NAME" ||
       WORKING="$WORKING $NAME"
+      TEST_TARGETS="$TEST_TARGETS $test_name"
   done
 
   # Print more targets.
   cat <<EOF
+# test_bin builds the 'test' file, not a file named test_bin.  And all the rest
+# of the test targest are phony too.
+.PHONY: test_bin $TEST_TARGETS
+
 clean::
 	rm -f $WORKING $PENDING
 
