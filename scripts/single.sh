@@ -3,7 +3,7 @@
 # Build standalone toybox commands.
 #
 # Usage:
-#   scripts/single.sh <command>...
+#   scripts/single.sh COMMAND...
 #
 # The output is put in the repo root, or $PREFIX.
 #
@@ -11,9 +11,9 @@
 #   # Put grep and sed binaries in this dir
 #   $ PREFIX=generated/test/bin scripts/single.sh grep sed
 
-if [ -z "$1" ]
+if [ $# -eq 0 ]
 then
-  echo "usage: single.sh command..." >&2
+  echo "Usage: single.sh COMMAND..." >&2
   exit 1
 fi
 
@@ -53,6 +53,9 @@ do
   echo "# CONFIG_TOYBOX is not set" >> "$KCONFIG_CONFIG" &&
   grep "CONFIG_TOYBOX_" .config >> "$KCONFIG_CONFIG" &&
 
-  make &&
+  # TODO: I don't like the mv here.  It should just go in a single place!  Get
+  # rid of PREFIX altogether.  scripts/make.sh should take the output name.
+
+  scripts/make.sh &&
   mv -f toybox $PREFIX$i || exit 1
 done

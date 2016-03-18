@@ -3,12 +3,17 @@
 # Run toybox tests.
 #
 # TODO:
+#
+# - This script should not build.  It should be covered in make dependencies!
+#   - 'all' requires a whole tree
+#   - 'single' just requires one command
+#     - should be bin/test
 # - Document the test interface!
-# - What functions do you get?
-#   - testing from runtests.sh
-#   - tests/_testfuncs.sh  # common code
-# - CMDNAME
-# - FAILCOUNT
+#   - What functions do you get?
+#     - testing from runtests.sh
+#     - tests/_testfuncs.sh  # common code
+#   - CMDNAME
+#   - FAILCOUNT
 
 usage()
 {
