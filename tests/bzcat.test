@@ -22,20 +22,21 @@ echo "hello" > file
 $system_tar -cjf file.tar.bz2 file
 
 $system_bzcat file.tar.bz2 > expected_out
+
 testing "decompresses a single file" \
   'bzcat file.tar.bz2 > Tempfile && echo "yes"; diff Tempfile expected_out && echo "yes"' \
   "yes\nyes\n" "" ""
 
-echo "hello" > file1
-echo "hi" > file2
-echo "Hi, Good morning !! I am a bzcat tester" > file3
+echo "one" > file1
+echo "two" > file2
+echo "three" > file3
 
 $system_tar -cjf file1.tar.bz2 file1
 $system_tar -cjf file2.tar.bz2 file2
 $system_tar -cjf file3.tar.bz2 file3
 
 $system_bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > expected_out
+
 testing "decompresses multiple files" \
   'bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > Tempfile && echo "yes" ; diff Tempfile expected_out && echo "yes"' \
   "yes\nyes\n" "" ""
-
