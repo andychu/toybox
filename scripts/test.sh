@@ -35,13 +35,13 @@ EOF
 
 trap 'kill $(jobs -p) 2>/dev/null; exit 1' INT
 
-pushd_test_dir()
+cd_test_dir()
 {
   local cmd=$1
   local test_dir=$TEST_ROOT/test_$cmd
   rm -rf $test_dir
   mkdir -p $test_dir
-  pushd $test_dir >/dev/null
+  cd $test_dir
 }
 
 setup_test_env()
@@ -78,9 +78,9 @@ single()
   for cmd in "$@"
   do
     CMDNAME=$cmd  # .test file uses this
-    pushd_test_dir $cmd
+    cd_test_dir $cmd
+    # Run test.  NOTE: it may 'continue'
     . "$TOPDIR"/tests/$cmd.test
-    popd >/dev/null
   done
 
   [ $FAILCOUNT -eq 0 ] || echo "toybox $cmd: $FAILCOUNT total failures"
@@ -107,9 +107,11 @@ all()
     if [ -h $BIN_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       local old_count=$FAILCOUNT
-      pushd_test_dir $CMDNAME
-      . $test_file
-      popd >/dev/null
+      cd_test_dir $CMDNAME
+
+      # Run test.  NOTE: it may 'continue'
+      . $test_file 
+
       if [ $FAILCOUNT -ne $old_count ]
       then
         echo "$CMDNAME: some tests failed ($FAILCOUNT failures so far)"

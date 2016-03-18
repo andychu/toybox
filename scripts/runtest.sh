@@ -174,7 +174,8 @@ dochroot()
   rmdir tmpdir4chroot
 }
 
-# Tests can call this if they require root.
+# Tests can call this if they require root.  NOTE: This code relies on being in
+# the 'for' loop in scripts/test.sh.
 skip_if_not_root() 
 {
   if [ "$(id -u)" -ne 0 ]
