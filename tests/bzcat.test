@@ -10,8 +10,8 @@
 
 #testing "name" "command" "result" "infile" "stdin"
 testing "overflow" \
-  'bzcat "$TOPDIR/files/bzcat/overflow.bz2" >/dev/null 2>/dev/null;
-   [ $? -eq 1 ] && echo good' "good\n" "" ""
+  'bzcat "$TOPDIR/tests/files/bzcat/overflow.bz2" 2>&1; echo $?' \
+  "bzcat: bad data\n1\n" "" ""
 
 # PROBLEM:
 # "make test" -- toybox tar is in path
