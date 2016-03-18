@@ -5,6 +5,8 @@
 
 [ -f testing.sh ] && . testing.sh
 
+skip_if_not_root
+
 #testing "name" "command" "result" "infile" "stdin"
 
 root_fs=`df | grep "\/$" | awk '{print $1}'`

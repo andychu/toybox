@@ -99,7 +99,7 @@ all()
     CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
 
-    if [ -h $TOPDIR/generated/testdir/$CMDNAME ] || [ -n "$TEST_HOST" ]
+    if [ -h $BIN_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       local old_count=$FAILCOUNT
       cd_test_dir $CMDNAME
@@ -107,7 +107,7 @@ all()
       [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
       [ $FAILCOUNT -ne $old_count ] && echo "Some $CMDNAME tests failed"
     else
-      echo "$CMDNAME disabled"
+      echo "$CMDNAME not built"
     fi
   done
 
