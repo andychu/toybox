@@ -64,12 +64,12 @@ optional()
 
 testing()
 {
-  local NAME="$CMDNAME $1"
-  [ -z "$1" ] && NAME=$2
+  local test_desc="$CMDNAME $1"
+  [ -z "$1" ] && test_desc=$2
 
   if [ $# -ne 5 ]
   then
-    echo "Test $NAME has the wrong number of arguments ($# $*)" >&2
+    echo "Test $test_desc has the wrong number of arguments ($# $*)" >&2
     exit
   fi
 
@@ -77,24 +77,24 @@ testing()
 
   if [ -n "$SKIP" ] || ( [ -n "$SKIP_HOST" ] && [ -n "$TEST_HOST" ])
   then
-    [ ! -z "$VERBOSE" ] && echo "$SHOWSKIP: $NAME"
+    [ ! -z "$VERBOSE" ] && echo "$SHOWSKIP: $test_desc"
     return 0
   fi
 
   echo -ne "$3" > expected
   echo -ne "$4" > input
   echo -ne "$5" | eval "$2" > actual
-  local STATUS=$?
+  local status=$?
 
   # Catch segfaults
-  [ $STATUS -gt 128 ] && [ $STATUS -lt 255 ] &&
-    echo "exited with signal (or returned $STATUS)" >> actual
+  [ $status -gt 128 ] && [ $status -lt 255 ] &&
+    echo "exited with signal (or returned $status)" >> actual
  
   cmp expected actual > /dev/null 2>&1
   if [ $? -ne 0 ]
   then
     FAILCOUNT=$(($FAILCOUNT+1))
-    echo "$SHOWFAIL: $NAME"
+    echo "$SHOWFAIL: $test_desc"
     if [ -n "$VERBOSE" ]
     then
       [ ! -z "$4" ] && echo "echo -ne \"$4\" > input"
@@ -103,7 +103,7 @@ testing()
       [ "$VERBOSE" == fail ] && exit 1
     fi
   else
-    echo "$SHOWPASS: $NAME"
+    echo "$SHOWPASS: $test_desc"
   fi
   rm -f input expected actual
 
