@@ -2,6 +2,12 @@
 
 [ -f testing.sh ] && . testing.sh
 
+if [ "$(id -u)" -ne 0 ]
+then
+  echo "$SHOWSKIP: $CMDNAME (not root)"
+  continue
+fi
+
 #testing "name" "command" "result" "infile" "stdin"
 
 # chattr - Testcases
