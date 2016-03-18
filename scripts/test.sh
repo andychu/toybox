@@ -33,7 +33,7 @@ trap 'kill $(jobs -p) 2>/dev/null; exit 1' INT
 cd_test_dir()
 {
   local cmd=$1
-  local test_dir=$TOPDIR/generated/testdir/test_$cmd
+  local test_dir=$TEST_ROOT/test_$cmd
   rm -rf $test_dir
   mkdir -p $test_dir
   cd $test_dir
@@ -138,7 +138,19 @@ audit()
   wc -l generated/with-*.txt
 }
 
-readonly TEST_ROOT=$TOPDIR/generated/testdir
+readonly TEST_ROOT=$TOPDIR/generated/test
+# TODO: Should this be more integrated with the build system, and just be in
+# 'build' ?
+# - _tmp/
+#   - bin/
+#   - test/
+#   - obj/
+#
+# generated/
+#   testdir/
+#   obj/
+# generated now has Config.in, 
+
 readonly BIN_DIR=$TEST_ROOT/bin
 
 rm -rf $TEST_ROOT
