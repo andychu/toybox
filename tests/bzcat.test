@@ -5,10 +5,21 @@
 
 [ -f testing.sh ] && . testing.sh
 
+
+# BUG: Test is wrong!  File does not exist!!
+
 #testing "name" "command" "result" "infile" "stdin"
 testing "overflow" \
   'bzcat "$TOPDIR/files/bzcat/overflow.bz2" >/dev/null 2>/dev/null;
    [ $? -eq 1 ] && echo good' "good\n" "" ""
+
+# PROBLEM:
+# "make test" -- toybox tar is in path
+# "make test_foo" -- tar is not in generated/testdir; system tar is in path!!!
+
+echo "TOPDIR = $TOPDIR"
+echo "PATH = $PATH"
+tar --version
 
 echo "hello" > file
 tar -cjf file.tar.bz2 file
