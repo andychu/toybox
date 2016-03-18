@@ -30,13 +30,13 @@ EOF
 
 trap 'kill $(jobs -p) 2>/dev/null; exit 1' INT
 
-cd_test_dir()
+pushd_test_dir()
 {
   local cmd=$1
   local test_dir=$TEST_ROOT/test_$cmd
   rm -rf $test_dir
   mkdir -p $test_dir
-  cd $test_dir
+  pushd $test_dir >/dev/null
 }
 
 setup_test_env()
@@ -73,12 +73,12 @@ single()
   for cmd in "$@"
   do
     CMDNAME=$cmd  # .test file uses this
-    cd_test_dir $cmd
+    pushd_test_dir $cmd
     . "$TOPDIR"/tests/$cmd.test
-    [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
+    popd >/dev/null
   done
 
-  [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
+  [ $FAILCOUNT -eq 0 ]  # exit success if there were 0 failures
 }
 
 # Run tests for all commands.
@@ -98,16 +98,19 @@ all()
     if [ -h $BIN_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       local old_count=$FAILCOUNT
-      cd_test_dir $CMDNAME
+      pushd_test_dir $CMDNAME
       . $test_file
-      [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
-      [ $FAILCOUNT -ne $old_count ] && echo "Some $CMDNAME tests failed"
+      popd >/dev/null
+      if [ $FAILCOUNT -ne $old_count ]
+      then
+        echo "$CMDNAME: some tests failed ($FAILCOUNT failures so far)"
+      fi
     else
       echo "$CMDNAME not built"
     fi
   done
 
-  [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
+  [ $FAILCOUNT -eq 0 ]  # exit success if there were 0 failures
 }
 
 readonly TEST_ROOT=$TOPDIR/generated/test
