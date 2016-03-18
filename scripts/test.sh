@@ -39,7 +39,7 @@ setup_test_env()
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.
-  . "$TOPDIR"/scripts/runtest.sh
+  . "$TOPDIR/scripts/runtest.sh"
 
   if [ -f "$TOPDIR/generated/config.h" ]
   then
@@ -86,9 +86,11 @@ all()
 
     if [ -h $TOPDIR/generated/testdir/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
+      local old_count=$FAILCOUNT
       cd_test_dir $CMDNAME
       . $test_file
       [ $FAILCOUNT -ne 0 ] && echo "Failures so far: $FAILCOUNT"
+      [ $FAILCOUNT -ne $old_count ] && echo "Some $CMDNAME tests failed"
     else
       echo "$CMDNAME disabled"
     fi
