@@ -139,6 +139,11 @@ toys()
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
 }
 
+sort_words()
+{
+  tr ' ' '\n' | sort | xargs
+}
+
 # Print Makefile targets to stdout.
 print_singlemake()
 {
@@ -176,13 +181,13 @@ clean::
 	rm -f $WORKING $PENDING
 
 list:
-	@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)
+	@echo $(echo $WORKING $PENDING | sort_words)
 
 list_working:
-	@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)
+	@echo $(echo "$WORKING" | sort_words)
 
 list_pending:
-	@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)
+	@echo $(echo "$PENDING" | sort_words)
 EOF
   )
 }
