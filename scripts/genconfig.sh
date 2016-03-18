@@ -147,53 +147,53 @@ sort_words()
 # Print Makefile targets to stdout.
 print_singlemake()
 {
-  local WORKING=
-  local PENDING=
-  local TEST_TARGETS=
-  while IFS=":" read FILE NAME
+  local working=
+  local pending=
+  local test_targets=
+  while IFS=":" read cmd_src cmd
   do
-    [ "$NAME" == help ] && continue
-    [ "$NAME" == install ] && continue
+    [ "$cmd" == help ] && continue
+    [ "$cmd" == install ] && continue
 
-    local test_name=test_$NAME
-    local build_name=$NAME
+    local test_name=test_$cmd
+    local build_name=$cmd
     # 'make test' is already taken for running all tests, so the 'test' binary
     # can be built with 'make test_bin'.
-    [ "$NAME" == test ] && build_name=test_bin
+    [ "$cmd" == test ] && build_name=test_bin
 
     # Print a build target and test target for each command.
     cat <<EOF
-$build_name: $FILE *.[ch] lib/*.[ch]
-	scripts/single.sh $NAME
+$build_name: $cmd_src *.[ch] lib/*.[ch]
+	scripts/single.sh $cmd
 
 $test_name:
-	scripts/test.sh single $NAME
+	scripts/test.sh single $cmd
 
 EOF
 
-    [ "${FILE/pending//}" != "$FILE" ] &&
-      PENDING="$PENDING $NAME" ||
-      WORKING="$WORKING $NAME"
-      TEST_TARGETS="$TEST_TARGETS $test_name"
+    [ "${cmd_src/pending//}" != "$cmd_src" ] &&
+      pending="$pending $cmd" ||
+      working="$working $cmd"
+      test_targets="$test_targets $test_name"
   done
 
   # Print more targets.
   cat <<EOF
 # test_bin builds the 'test' file, not a file named test_bin.  And all the rest
 # of the test targest are phony too.
-.PHONY: test_bin $TEST_TARGETS
+.PHONY: test_bin $test_targets
 
 clean::
-	rm -f $WORKING $PENDING
+	rm -f $working $pending
 
 list:
-	@echo $(echo $WORKING $PENDING | sort_words)
+	@echo $(echo $working $pending | sort_words)
 
 list_working:
-	@echo $(echo "$WORKING" | sort_words)
+	@echo $(echo "$working" | sort_words)
 
 list_pending:
-	@echo $(echo "$PENDING" | sort_words)
+	@echo $(echo "$pending" | sort_words)
 EOF
 }
 
