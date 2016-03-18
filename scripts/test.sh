@@ -50,7 +50,7 @@ setup_test_env()
   HOST_BIN_DATE=$(which date)
   HOST_BIN_HOSTNAME=$(which hostname)
 
-  PATH="$BIN_DIR:$PATH"
+  PATH="$BIN_DIR:$PATH"  # Make sure the tests can use toybox tools
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.
@@ -66,13 +66,10 @@ setup_test_env()
 single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
-  [ -z "$TEST_HOST" ] &&
-    PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
+  [ -z "$TEST_HOST" ] && PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
 
   setup_test_env
 
-  # NOTE: tests dir is not cleared
-  # Run tests for the given commands
   for cmd in "$@"
   do
     CMDNAME=$cmd  # .test file uses this
@@ -88,14 +85,13 @@ single()
 all()
 {
   # Build a toybox binary and create symlinks to it.
-  [ -z "$TEST_HOST" ] &&
-    make install_flat PREFIX=$BIN_DIR/ || exit 1
+  [ -z "$TEST_HOST" ] && make install_flat PREFIX=$BIN_DIR/ || exit 1
 
   setup_test_env
 
-  # Run all tests
   for test_file in "$TOPDIR"/tests/*.test
   do
+    # Strip off the front and back of the test filename to get the command
     CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
 
@@ -114,55 +110,10 @@ all()
   [ $FAILCOUNT -eq 0 ]  # exit success if there 0 failures
 }
 
-# Adapted from scripts/genconfig
-
-# Find names of commands that can be built standalone in these C files
-toys()
-{
-  grep 'TOY(.*)' "$@" \
-    | grep -v TOYFLAG_NOFORK \
-    | grep -v "0))" 
-    #| sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
-}
-
-# TODO: Is there a better way to extract these?
-toys_with_source()
-{
-  grep -l 'TOY(.*)' toys/*/*.c | sed -e 's;.*/\([0-9a-z_]\+\)\.c$;\1;' | sort
-  #grep -o '/(.*)\.c$'
-}
-
-toys_with_tests()
-{
-  ls tests/*.test | sed -e 's;.*/\([0-9a-z_]\+\)\.test$;\1;'
-}
-
-audit()
-{
-  toys_with_tests > generated/with-tests.txt
-  toys_with_source > generated/with-source.txt
-
-  diff -u generated/with-source.txt generated/with-tests.txt 
-
-  wc -l generated/with-*.txt
-}
-
 readonly TEST_ROOT=$TOPDIR/generated/test
-# TODO: Should this be more integrated with the build system, and just be in
-# 'build' ?
-# - _tmp/
-#   - bin/
-#   - test/
-#   - obj/
-#
-# generated/
-#   testdir/
-#   obj/
-# generated now has Config.in, 
-
 readonly BIN_DIR=$TEST_ROOT/bin
 
-rm -rf $TEST_ROOT
+rm -rf $TEST_ROOT  # clear out data from old runs
 mkdir -p $BIN_DIR
 
 case $1 in
