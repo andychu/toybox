@@ -5,19 +5,12 @@
 
 [ -f testing.sh ] && . testing.sh
 
-# TODO: Don't hard-code system paths here.  "which" doesn't work because PATH
-# is altered by the test harness.
-system_tar=/bin/tar
-# The test compares it against the system bzcat.
-# TODO: On Ubuntu, xzcat is in /usr/bin, while zcat is in /bin.
-system_xzcat=/usr/bin/xzcat
-
 #testing "name" "command" "result" "infile" "stdin"
 
 echo "hello" > file
-$system_tar -cJf file.xz file
+$HOST_BIN_TAR -cJf file.xz file
 
-$system_xzcat file.xz > expected_out
+$HOST_BIN_XZCAT file.xz > expected_out
 testing "decompresses a single file" \
   'xzcat file.xz > Tempfile && echo yes; diff Tempfile expected_out && echo yes; rm -rf file* expected_out Tempfile' \
   "yes\nyes\n" "" ""
@@ -26,11 +19,11 @@ echo "one" > file1
 echo "two" > file2
 echo "three" > file3
 
-$system_tar -cJf file1.xz file1
-$system_tar -cJf file2.xz file2
-$system_tar -cJf file3.xz file3
+$HOST_BIN_TAR -cJf file1.xz file1
+$HOST_BIN_TAR -cJf file2.xz file2
+$HOST_BIN_TAR -cJf file3.xz file3
 
-$system_xzcat file1.xz file2.xz file3.xz > expected_out
+$HOST_BIN_XZCAT file1.xz file2.xz file3.xz > expected_out
 
 testing "decompresses multiple files" \
   'xzcat file1.xz file2.xz file3.xz > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \

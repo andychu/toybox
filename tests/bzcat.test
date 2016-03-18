@@ -5,12 +5,6 @@
 
 [ -f testing.sh ] && . testing.sh
 
-# TODO: Don't hard-code system paths here.  "which" doesn't work because PATH
-# is altered by the test harness.
-system_tar=/bin/tar
-# The test compares it against the system bzcat.
-system_bzcat=/bin/bzcat
-
 #testing "name" "command" "result" "infile" "stdin"
 
 testing "overflow" \
@@ -18,9 +12,9 @@ testing "overflow" \
   "bzcat: bad data\n1\n" "" ""
 
 echo "hello" > file
-$system_tar -cjf file.tar.bz2 file
+$HOST_BIN_TAR -cjf file.tar.bz2 file
 
-$system_bzcat file.tar.bz2 > expected_out
+$HOST_BIN_BZCAT file.tar.bz2 > expected_out
 
 testing "decompresses a single file" \
   'bzcat file.tar.bz2 > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
@@ -30,11 +24,11 @@ echo "one" > file1
 echo "two" > file2
 echo "three" > file3
 
-$system_tar -cjf file1.tar.bz2 file1
-$system_tar -cjf file2.tar.bz2 file2
-$system_tar -cjf file3.tar.bz2 file3
+$HOST_BIN_TAR -cjf file1.tar.bz2 file1
+$HOST_BIN_TAR -cjf file2.tar.bz2 file2
+$HOST_BIN_TAR -cjf file3.tar.bz2 file3
 
-$system_bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > expected_out
+$HOST_BIN_BZCAT file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > expected_out
 
 testing "decompresses multiple files" \
   'bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
