@@ -41,6 +41,16 @@ cd_test_dir()
 
 setup_test_env()
 {
+  # Before changing path, set variables for host executables.
+
+  HOST_BIN_TAR=$(which tar)
+  HOST_BIN_BZCAT=$(which bzcat)
+  HOST_BIN_XZCAT=$(which xzcat)
+  HOST_BIN_ZCAT=$(which zcat)
+
+  HOST_BIN_DATE=$(which date)
+  HOST_BIN_HOSTNAME=$(which hostname)
+
   PATH="$BIN_DIR:$PATH"
   export LC_COLLATE=C
 
