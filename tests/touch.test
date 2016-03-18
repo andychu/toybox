@@ -12,9 +12,10 @@ testing "-c missing" "touch -c warrus && [ ! -e warrus ] && echo yes" \
   "yes\n" "" ""
 
 testing "-d" \
-  "touch -d 2009-02-13T23:31:30Z walrus && $HOST_BIN_DATE -r walrus +%s" \
+  "touch -d 2009-02-13T23:31:30Z walrus && date -r walrus +%s" \
   "1234567890\n" "" ""
 
+# NOTE: Using host date because toybox date doesn't support %N.
 testing "-d nanoseconds" \
   "touch -d 2009-02-13T23:31:30.123456789Z walrus && $HOST_BIN_DATE -r walrus +%s.%N" \
   "1234567890.123456789\n" "" ""
