@@ -5,22 +5,31 @@
 
 [ -f testing.sh ] && . testing.sh
 
-#testing "name" "command" "result" "infile" "stdin"
-echo "hello" > file
-tar -czf file.gz file
-# Get system zcat
-zcatExe=`which zcat`
-$zcatExe file.gz > zcatOut
-testing "- decompresses a single file" "zcat file.gz > Tempfile && echo "yes"; diff Tempfile zcatOut && echo "yes"; rm -rf file* zcatOut Tempfile" "yes\nyes\n" "" ""
+# TODO: Don't hard-code system paths here.  "which" doesn't work because PATH
+# is altered by the test harness.
+system_tar=/bin/tar
+# The test compares it against the system bzcat.
+system_zcat=/bin/zcat
 
-#testing "name" "command" "result" "infile" "stdin"
-echo "hello" > file1
-echo "hi" > file2
-echo "Hi, Good morning !! I am a bzcat tester" > file3
-tar -czf file1.gz file1
-tar -czf file2.gz file2
-tar -czf file3.gz file3
-# Get system zcat
-zcatExe=`which zcat`
-$zcatExe file1.gz file2.gz file3.gz > zcatOut
-testing "- decompresses multiple files" "zcat file1.gz file2.gz file3.gz > Tempfile && echo "yes" ; diff Tempfile zcatOut && echo "yes"; rm -rf file* zcatOut Tempfile " "yes\nyes\n" "" ""
+# testing "name" "command" "result" "infile" "stdin"
+
+echo "hello" > file
+$system_tar -czf file.gz file
+
+$system_zcat file.gz > expected_out
+testing "decompresses a single file" \
+  'zcat file.gz > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
+  "yes\nyes\n" "" ""
+
+echo "one" > file1
+echo "two" > file2
+echo "three" > file3
+
+$system_tar -czf file1.gz file1
+$system_tar -czf file2.gz file2
+$system_tar -czf file3.gz file3
+
+$system_zcat file1.gz file2.gz file3.gz > expected_out
+testing "decompresses multiple files" \
+  'zcat file1.gz file2.gz file3.gz > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
+  "yes\nyes\n" "" ""
