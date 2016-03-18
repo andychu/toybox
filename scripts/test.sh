@@ -1,8 +1,14 @@
 #!/bin/bash
 #
 # Run toybox tests.
+#
 # TODO:
-# - Document the test interface!  Can't exit 1.
+# - Document the test interface!
+# - What functions do you get?
+#   - testing from runtests.sh
+#   - tests/_testfuncs.sh  # common code
+# - CMDNAME
+# - FAILCOUNT
 
 usage()
 {
@@ -35,7 +41,7 @@ cd_test_dir()
 
 setup_test_env()
 {
-  PATH="$TOPDIR/generated/testdir:$PATH"
+  PATH="$BIN_DIR:$PATH"
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.
@@ -52,7 +58,7 @@ single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
   [ -z "$TEST_HOST" ] &&
-    PREFIX=generated/testdir/ scripts/single.sh "$@" || exit 1
+    PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
 
   setup_test_env
 
@@ -74,7 +80,7 @@ all()
 {
   # Build a toybox binary and create symlinks to it.
   [ -z "$TEST_HOST" ] &&
-    make install_flat PREFIX=generated/testdir || exit 1
+    make install_flat PREFIX=$BIN_DIR/ || exit 1
 
   setup_test_env
 
@@ -132,9 +138,11 @@ audit()
   wc -l generated/with-*.txt
 }
 
-# TODO: Use a different location for the binaries?
-rm -rf generated/testdir
-mkdir -p generated/testdir
+readonly TEST_ROOT=$TOPDIR/generated/testdir
+readonly BIN_DIR=$TEST_ROOT/bin
+
+rm -rf $TEST_ROOT
+mkdir -p $BIN_DIR
 
 case $1 in
   single|all)
