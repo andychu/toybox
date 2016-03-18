@@ -116,6 +116,7 @@ all()
     fi
   done
 
+  echo
   echo -n "Tested $num_commands toybox commands: "
   if [ $FAILCOUNT -eq 0 ]
   then
