@@ -2,12 +2,7 @@
 
 [ -f testing.sh ] && . testing.sh
 
-if [ "$(id -u)" -ne 0 ]
-then
-  echo "$SHOWSKIP: $CMDNAME (not root)"
-  continue 2>/dev/null
-  exit
-fi
+skip_if_not_root
 
 # We chgrp between "root" and the last group in /etc/group.
 
