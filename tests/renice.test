@@ -72,20 +72,20 @@ do
   old_nice_val=`fun_nice_val $proc1`
   new_nice_val=`renice -n $n_val $proc1 >/dev/null 2>&1 && fun_nice_val $proc1`
   echo -n "[$old_nice_val/$new_nice_val],"
-  if [ $old_nice_val -eq 39 -a $old_nice_val -eq $new_nice_val ]
+  if [ "$old_nice_val" -eq 39 -a "$old_nice_val" -eq "$new_nice_val" ]
   then
     echo -n " [Equals 39,doing -1] "
     n_val="-1"
-  elif [ $old_nice_val -eq 0 -a $old_nice_val -eq $new_nice_val ]
+  elif [ "$old_nice_val" -eq 0 -a "$old_nice_val" -eq "$new_nice_val" ]
   then
     echo -n " [Equals 0,doing +1] "
     n_val="1"
-  elif [ $new_nice_val -gt 39 -o $new_nice_val -lt 0 ]
+  elif [ "$new_nice_val" -gt 39 -o "$new_nice_val" -lt 0 ]
   then
     echo " [Test Fail] "
     echo "FAIL: renice with step 1 ($proc1) (boundary value)"
     cnt="-1"
-  elif [ $new_nice_val -eq $n_val1 -a $new_nice_val -eq $(($old_nice_val+1)) ]
+  elif [ "$new_nice_val" -eq "$n_val1" -a "$new_nice_val" -eq $(($old_nice_val+1)) ]
   then
     cnt=$(($cnt + 1))
     if [ $cnt -eq $loop_cnt ]
