@@ -10,7 +10,7 @@ yes >/dev/null &
 pid=$!
 echo "PID $pid started"
 
-sleep .1
+sleep 0.1
 
 parent_pid=$(awk '{ print $4 }' /proc/$pid/stat)
 echo "Parent of process $pid is $parent_pid"
