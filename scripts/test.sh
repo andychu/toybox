@@ -78,6 +78,7 @@ single()
     popd >/dev/null
   done
 
+  [ $FAILCOUNT -eq 0 ] || echo "toybox $cmd: $FAILCOUNT total failures"
   [ $FAILCOUNT -eq 0 ]  # exit success if there were 0 failures
 }
 
@@ -89,6 +90,7 @@ all()
 
   setup_test_env
 
+  local num_commands=0
   for test_file in "$TOPDIR"/tests/*.test
   do
     # Strip off the front and back of the test filename to get the command
@@ -105,10 +107,19 @@ all()
       then
         echo "$CMDNAME: some tests failed ($FAILCOUNT failures so far)"
       fi
+      num_commands=$(($num_commands+1))
     else
       echo "$CMDNAME not built"
     fi
   done
+
+  echo -n "Tested $num_commands toybox commands: "
+  if [ $FAILCOUNT -eq 0 ]
+  then
+    echo "ALL PASSED"
+  else
+    echo "$FAILCOUNT total failures"
+  fi
 
   [ $FAILCOUNT -eq 0 ]  # exit success if there were 0 failures
 }
