@@ -10,6 +10,9 @@ export LC_ALL=C
 set -o pipefail
 source ./configure
 
+# output ${OUTNAME}_unstripped and and $OUTNAME
+OUTNAME=${1:-toybox}
+
 [ -z "$KCONFIG_CONFIG" ] && KCONFIG_CONFIG=".config"
 
 # Since each cc invocation is short, launch half again as many processes
@@ -114,7 +117,7 @@ fi
 
 # LINK needs optlibs.dat, above
 
-LINK="$(echo $LDOPTIMIZE $LDFLAGS -o toybox_unstripped -Wl,--as-needed $(cat generated/optlibs.dat))"
+LINK="$(echo $LDOPTIMIZE $LDFLAGS -o ${OUTNAME}_unstripped -Wl,--as-needed $(cat generated/optlibs.dat))"
 genbuildsh > generated/build.sh && chmod +x generated/build.sh || exit 1
 
 echo "Make generated/config.h from $KCONFIG_CONFIG."
@@ -296,9 +299,9 @@ done
 [ $DONE -ne 0 ] && exit 1
 
 do_loudly $BUILD $LFILES $LINK || exit 1
-if [ ! -z "$NOSTRIP" ] || ! do_loudly ${CROSS_COMPILE}strip toybox_unstripped -o toybox
+if [ ! -z "$NOSTRIP" ] || ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
 then
-  echo "strip failed, using unstripped" && cp toybox_unstripped toybox ||
+  echo "strip failed, using unstripped" && cp ${OUTNAME}_unstripped $OUTNAME ||
   exit 1
 fi
 

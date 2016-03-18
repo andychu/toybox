@@ -55,7 +55,8 @@ do
 
   # TODO: I don't like the mv here.  It should just go in a single place!  Get
   # rid of PREFIX altogether.  scripts/make.sh should take the output name.
+  # this is a bug because we clobber the existing toybox binary, which I think
+  # is necessary for 'make test'.
 
-  scripts/make.sh &&
-  mv -f toybox $PREFIX$i || exit 1
+  scripts/make.sh $PREFIX$i || exit 1
 done
