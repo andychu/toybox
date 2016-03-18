@@ -30,8 +30,9 @@
 # else contains a colon-separated list of features (in which case the function
 # clears SKIP if the flag was found, or sets it to 1 if the flag was not found).
 
-export FAILCOUNT=0
-export SKIP=
+FAILCOUNT=0
+SKIPPED_COMMANDS=
+SKIP=
 
 # Helper functions
 
@@ -181,6 +182,7 @@ skip_if_not_root()
   if [ "$(id -u)" -ne 0 ]
   then
     echo "$SHOWSKIP: $CMDNAME (not root)"
+    SKIPPED_COMMANDS="$SKIPPED_COMMANDS $CMDNAME"
     continue
   fi
 }

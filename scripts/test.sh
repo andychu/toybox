@@ -95,7 +95,7 @@ all()
 
   setup_test_env
 
-  local fail_commands=''
+  local failed_commands=''
   local num_commands=0
 
   for test_file in "$TOPDIR"/tests/*.test
@@ -115,7 +115,7 @@ all()
       if [ $FAILCOUNT -ne $old_count ]
       then
         echo "$CMDNAME: some tests failed ($FAILCOUNT failures so far)"
-        fail_commands="$fail_commands $CMDNAME"
+        failed_commands="$failed_commands $CMDNAME"
       fi
       num_commands=$(($num_commands+1))
     else
@@ -129,9 +129,10 @@ all()
   then
     echo "ALL PASSED"
   else
-    echo "$FAILCOUNT total failures"
-    echo "Commands with test failures: $fail_commands"
+    echo "$FAILCOUNT test failures"
+    echo "Commands with test failures: $failed_commands"
   fi
+  echo "Commands skipped: $SKIPPED_COMMANDS"
 
   [ $FAILCOUNT -eq 0 ]  # exit success if there were 0 failures
 }
