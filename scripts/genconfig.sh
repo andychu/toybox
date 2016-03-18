@@ -139,31 +139,49 @@ toys()
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
 }
 
-main() {
-  probeconfig > generated/Config.probed || rm generated/Config.probed
-  genconfig > generated/Config.in || rm generated/Config.in
-
-  WORKING=
-  PENDING=
+# Print Makefile targets to stdout.
+print_singlemake()
+{
+  local WORKING=
+  local PENDING=
   toys toys/*/*.c | (
   while IFS=":" read FILE NAME
   do
     [ "$NAME" == help ] && continue
     [ "$NAME" == install ] && continue
-    echo -e "$NAME: $FILE *.[ch] lib/*.[ch]\n\tscripts/single.sh $NAME\n"
-    echo -e "test_$NAME:\n\tscripts/test.sh single $NAME\n"
+
+    cat <<EOF
+$NAME: $FILE *.[ch] lib/*.[ch]
+	scripts/single.sh $NAME
+
+test_$NAME:
+	scripts/test.sh single $NAME
+EOF
     [ "${FILE/pending//}" != "$FILE" ] &&
       PENDING="$PENDING $NAME" ||
       WORKING="$WORKING $NAME"
-  done > .singlemake &&
-  echo -e "clean::\n\trm -f $WORKING $PENDING" >> .singlemake &&
-  echo -e "list:\n\t@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)"\
-    >> .singlemake &&
-  echo -e "list_working:\n\t@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)" \
-    >> .singlemake &&
-  echo -e "list_pending:\n\t@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)" \
-    >> .singlemake
+  done
+  cat <<EOF
+clean::
+	rm -f $WORKING $PENDING
+
+list:
+	@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)
+
+list_working:
+	@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)
+
+list_pending:
+	@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)
+EOF
   )
+}
+
+main() {
+  probeconfig > generated/Config.probed || rm generated/Config.probed
+  genconfig > generated/Config.in || rm generated/Config.in
+
+  print_singlemake > .singlemake
 }
 
 main "$@"
