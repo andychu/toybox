@@ -15,7 +15,7 @@ system_xzcat=/usr/bin/xzcat
 #testing "name" "command" "result" "infile" "stdin"
 
 echo "hello" > file
-tar -cJf file.xz file
+$system_tar -cJf file.xz file
 
 $system_xzcat file.xz > expected_out
 testing "decompresses a single file" \
@@ -26,9 +26,9 @@ echo "one" > file1
 echo "two" > file2
 echo "three" > file3
 
-tar -cJf file1.xz file1
-tar -cJf file2.xz file2
-tar -cJf file3.xz file3
+$system_tar -cJf file1.xz file1
+$system_tar -cJf file2.xz file2
+$system_tar -cJf file3.xz file3
 
 $system_xzcat file1.xz file2.xz file3.xz > expected_out
 
