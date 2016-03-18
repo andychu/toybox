@@ -150,17 +150,27 @@ print_singlemake()
     [ "$NAME" == help ] && continue
     [ "$NAME" == install ] && continue
 
+    local build_name=$NAME
+    # 'make test' is already taken for running all tests.  The 'test' binary
+    # can be built with 'make test_bin'
+    [ "$NAME" == test ] && build_name=test_bin
+
+    # Print a build target and test target for each command.
     cat <<EOF
-$NAME: $FILE *.[ch] lib/*.[ch]
+$build_name: $FILE *.[ch] lib/*.[ch]
 	scripts/single.sh $NAME
 
 test_$NAME:
 	scripts/test.sh single $NAME
+
 EOF
+
     [ "${FILE/pending//}" != "$FILE" ] &&
       PENDING="$PENDING $NAME" ||
       WORKING="$WORKING $NAME"
   done
+
+  # Print more targets.
   cat <<EOF
 clean::
 	rm -f $WORKING $PENDING
