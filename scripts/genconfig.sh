@@ -1,5 +1,15 @@
 #!/bin/bash
-
+#
+# Inspects the system and generates various config files.
+#
+# Usage:
+#   scripts/genconfig.sh
+#
+# Outputs:
+# - generated/Config.in, generated/Config.probed - kconfig input
+# - generated/cflags - CFLAGS used by scripts/make.sh
+# - .singlemake - targets included by Makefile
+#
 # This has to be a separate file from scripts/make.sh so it can be called
 # before menuconfig.  (It's called again from scripts/make.sh just to be sure.)
 
@@ -124,9 +134,6 @@ genconfig()
   done
 }
 
-probeconfig > generated/Config.probed || rm generated/Config.probed
-genconfig > generated/Config.in || rm generated/Config.in
-
 # Find names of commands that can be built standalone in these C files
 toys()
 {
@@ -134,24 +141,70 @@ toys()
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\1:\3/p'
 }
 
-WORKING=
-PENDING=
-toys toys/*/*.c | (
-while IFS=":" read FILE NAME
-do
-  [ "$NAME" == help ] && continue
-  [ "$NAME" == install ] && continue
-  echo -e "$NAME: $FILE *.[ch] lib/*.[ch]\n\tscripts/single.sh $NAME\n"
-  echo -e "test_$NAME:\n\tscripts/test.sh $NAME\n"
-  [ "${FILE/pending//}" != "$FILE" ] &&
-    PENDING="$PENDING $NAME" ||
-    WORKING="$WORKING $NAME"
-done > .singlemake &&
-echo -e "clean::\n\trm -f $WORKING $PENDING" >> .singlemake &&
-echo -e "list:\n\t@echo $(echo $WORKING $PENDING | tr ' ' '\n' | sort | xargs)"\
-  >> .singlemake &&
-echo -e "list_working:\n\t@echo $(echo $WORKING | tr ' ' '\n' | sort | xargs)" \
-  >> .singlemake &&
-echo -e "list_pending:\n\t@echo $(echo $PENDING | tr ' ' '\n' | sort | xargs)" \
-  >> .singlemake
-)
+sort_words()
+{
+  tr ' ' '\n' | sort | xargs
+}
+
+# Print Makefile targets to stdout.
+print_singlemake()
+{
+  local working=
+  local pending=
+  local test_targets=
+  while IFS=":" read cmd_src cmd
+  do
+    [ "$cmd" == help ] && continue
+    [ "$cmd" == install ] && continue
+
+    local test_name=test_$cmd
+    local build_name=$cmd
+    # 'make test' is already taken for running all tests, so the 'test' binary
+    # can be built with 'make test_bin'.
+    [ "$cmd" == test ] && build_name=test_bin
+
+    # Print a build target and test target for each command.
+    cat <<EOF
+$build_name: $cmd_src *.[ch] lib/*.[ch]
+	scripts/single.sh $cmd
+
+$test_name:
+	scripts/test.sh single $cmd
+
+EOF
+
+    [ "${cmd_src/pending//}" != "$cmd_src" ] &&
+      pending="$pending $cmd" ||
+      working="$working $cmd"
+      test_targets="$test_targets $test_name"
+  done
+
+  # Print more targets.
+  cat <<EOF
+# test_bin builds the 'test' file, not a file named test_bin.  And all the rest
+# of the test targest are phony too.
+.PHONY: test_bin $test_targets
+
+clean::
+	rm -f $working $pending
+
+list:
+	@echo $(echo $working $pending | sort_words)
+
+list_working:
+	@echo $(echo "$working" | sort_words)
+
+list_pending:
+	@echo $(echo "$pending" | sort_words)
+EOF
+}
+
+main()
+{
+  probeconfig > generated/Config.probed || rm generated/Config.probed
+  genconfig > generated/Config.in || rm generated/Config.in
+
+  toys toys/*/*.c | print_singlemake > .singlemake
+}
+
+main "$@"

@@ -30,8 +30,9 @@
 # else contains a colon-separated list of features (in which case the function
 # clears SKIP if the flag was found, or sets it to 1 if the flag was not found).
 
-export FAILCOUNT=0
-export SKIP=
+FAILCOUNT=0
+SKIPPED_COMMANDS=
+SKIP=
 
 # Helper functions
 
@@ -64,12 +65,12 @@ optional()
 
 testing()
 {
-  NAME="$CMDNAME $1"
-  [ -z "$1" ] && NAME=$2
+  local test_desc="$CMDNAME $1"
+  [ -z "$1" ] && test_desc=$2
 
   if [ $# -ne 5 ]
   then
-    echo "Test $NAME has the wrong number of arguments ($# $*)" >&2
+    echo "Test $test_desc has the wrong number of arguments ($# $*)" >&2
     exit
   fi
 
@@ -77,24 +78,24 @@ testing()
 
   if [ -n "$SKIP" ] || ( [ -n "$SKIP_HOST" ] && [ -n "$TEST_HOST" ])
   then
-    [ ! -z "$VERBOSE" ] && echo "$SHOWSKIP: $NAME"
+    [ ! -z "$VERBOSE" ] && echo "$SHOWSKIP: $test_desc"
     return 0
   fi
 
   echo -ne "$3" > expected
   echo -ne "$4" > input
   echo -ne "$5" | eval "$2" > actual
-  RETVAL=$?
+  local status=$?
 
   # Catch segfaults
-  [ $RETVAL -gt 128 ] && [ $RETVAL -lt 255 ] &&
-    echo "exited with signal (or returned $RETVAL)" >> actual
+  [ $status -gt 128 ] && [ $status -lt 255 ] &&
+    echo "exited with signal (or returned $status)" >> actual
  
   cmp expected actual > /dev/null 2>&1
   if [ $? -ne 0 ]
   then
-    FAILCOUNT=$[$FAILCOUNT+1]
-    echo "$SHOWFAIL: $NAME"
+    FAILCOUNT=$(($FAILCOUNT+1))
+    echo "$SHOWFAIL: $test_desc"
     if [ -n "$VERBOSE" ]
     then
       [ ! -z "$4" ] && echo "echo -ne \"$4\" > input"
@@ -103,13 +104,15 @@ testing()
       [ "$VERBOSE" == fail ] && exit 1
     fi
   else
-    echo "$SHOWPASS: $NAME"
+    echo "$SHOWPASS: $test_desc"
   fi
   rm -f input expected actual
 
   [ -n "$DEBUG" ] && set +x
 
-  return $RETVAL
+  # Always succeed -- we don't want the exit code to depend on just the last
+  # "testing" statement.
+  return 0
 }
 
 # Recursively grab an executable and all the libraries needed to run it.
@@ -172,3 +175,14 @@ dochroot()
   rmdir tmpdir4chroot
 }
 
+# Tests can call this if they require root.  NOTE: This code relies on being in
+# the 'for' loop in scripts/test.sh.
+skip_if_not_root() 
+{
+  if [ "$(id -u)" -ne 0 ]
+  then
+    echo "$SHOWSKIP: $CMDNAME (not root)"
+    SKIPPED_COMMANDS="$SKIPPED_COMMANDS $CMDNAME"
+    continue
+  fi
+}

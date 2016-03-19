@@ -1,10 +1,19 @@
 #!/bin/bash
+#
+# Build standalone toybox commands.
+#
+# Usage:
+#   scripts/single.sh COMMAND...
+#
+# The output is put in the repo root, or $PREFIX.
+#
+# Example:
+#   # Put grep and sed binaries in this dir
+#   $ PREFIX=generated/test/bin scripts/single.sh grep sed
 
-# Build a standalone toybox command
-
-if [ -z "$1" ]
+if [ $# -eq 0 ]
 then
-  echo "usage: single.sh command..." >&2
+  echo "Usage: single.sh COMMAND..." >&2
   exit 1
 fi
 
@@ -14,6 +23,12 @@ then
   echo "Need .config for toybox global settings. Run defconfig/menuconfig." >&2
   exit 1
 fi
+
+# For each command:
+# 1) write a .singleconfig file (I think this would be better as
+# generated/singleconfig/sed)
+# 2) make allnoconfig, except turn stuff related to the command on
+# 3) make toybox, and then move it to the command name.
 
 export KCONFIG_CONFIG=.singleconfig
 for i in "$@"
@@ -38,6 +53,5 @@ do
   echo "# CONFIG_TOYBOX is not set" >> "$KCONFIG_CONFIG" &&
   grep "CONFIG_TOYBOX_" .config >> "$KCONFIG_CONFIG" &&
 
-  make &&
-  mv -f toybox $PREFIX$i || exit 1
+  scripts/make.sh $PREFIX$i || exit 1
 done
