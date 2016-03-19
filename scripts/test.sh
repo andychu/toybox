@@ -54,19 +54,25 @@ setup_test_env()
   fi
 }
 
-readonly CLANG_DIR=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04
-
 # Run tests for specific commands.
 single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
 
-  if [ -n "$ASAN" ]; then
-    export CC=$CLANG_DIR/bin/clang
-    export CFLAGS='-fsanitize=address -g'
+  # If set to a path relative to the top directory
+  if [ -n "$SINGLE_BIN" ]
+  then
+    # make a directory and set your PATH to it
+    local tree=generated/single-tree
+    rm -rf $tree
+    mkdir -p $tree
+    ln -s -v $TOPDIR/$SINGLE_BIN $tree
+    # Add to the front.  TODO: Don't add it up above.
+    PATH=$TOPDIR/$tree:$PATH
+  else
+    [ -z "$TEST_HOST" ] &&
+      PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
   fi
-  [ -z "$TEST_HOST" ] &&
-    PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
 
   setup_test_env
 
