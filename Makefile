@@ -18,10 +18,6 @@ toybox_stuff: $(KCONFIG_CONFIG) *.[ch] lib/*.[ch] toys/*.h toys/*/*.c scripts/*.
 toybox toybox_unstripped: toybox_stuff
 	scripts/make.sh
 
-.PHONY: clean distclean baseline bloatcheck install install_flat \
-	uinstall uninstall_flat test tests help toybox_stuff change \
-	list list_working list_pending
-
 # .singlemake targets use ASAN_CC and ASAN_CFLAGS.
 ASAN_CC =
 ifdef CLANG_DIR
@@ -30,6 +26,16 @@ else
 	ASAN_CC := clang
 endif
 ASAN_CFLAGS = -fsanitize=address -g
+
+toybox_asan: CC = $(ASAN_CC)
+toybox_asan: CFLAGS= $(ASAN_CFLAGS)
+toybox_asan:
+	scripts/make.sh toybox_asan
+
+.PHONY: clean distclean baseline bloatcheck install install_flat \
+	uinstall uninstall_flat test tests help toybox_stuff change \
+	list list_working list_pending
+
 
 include kconfig/Makefile
 -include .singlemake
@@ -62,7 +68,8 @@ change:
 	scripts/change.sh
 
 clean::
-	rm -rf toybox toybox_unstripped generated change .singleconfig*
+	rm -rf toybox toybox_unstripped toybox_asan toybox_asan_unstripped \
+		generated change .singleconfig*
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
