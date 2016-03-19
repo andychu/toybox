@@ -399,8 +399,9 @@ void cp_main(void)
       if (!force || no_clobber) {
         struct stat st;
         int exists = !stat(TT.destname, &st);
-        // Technically "is writeable" is more complicated (022 is not writeable
-        // by the owner, just everybody _else_) but I don't care.
+        // Prompt if -i or file isn't writable.  Technically "is writeable" is
+        // more complicated (022 is not writeable by the owner, just everybody
+        // _else_) but I don't care.
         if (exists && ((toys.optflags & FLAG_i) || !(st.st_mode & 0222))) {
           fprintf(stderr, "%s: overwrite '%s'", toys.which->name, TT.destname);
           if (!yesno(1)) rc = 0;
