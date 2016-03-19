@@ -59,6 +59,12 @@ single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
 
+  # TODO:
+  # - Getting a line number in libc-start.c, but not the rest.
+  echo ===
+  echo ASAN SYMBOLIZER $ASAN_SYMBOLIZER_PATH
+  echo ===
+
   # SINGLE_BIN can be set the path of a built binary relative to the repo root.
   # TODO: This should be the only case?
   if [ -n "$SINGLE_BIN" ]

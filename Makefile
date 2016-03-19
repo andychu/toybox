@@ -20,7 +20,10 @@ toybox toybox_unstripped: toybox_stuff
 
 # .singlemake targets use ASAN_CC and ASAN_CFLAGS.
 ASAN_CC =
+# NOTE: This works but somehow we're not getting symbols in expr.c anymore.
+export ASAN_SYMBOLIZER_PATH =
 ifdef CLANG_DIR
+	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	ASAN_CC := $(CLANG_DIR)/bin/clang
 else
 	ASAN_CC := clang
@@ -73,7 +76,7 @@ change:
 
 clean::
 	rm -rf toybox toybox_unstripped toybox_asan toybox_asan_unstripped \
-		generated change .singleconfig*
+		generated change .singleconfig* asan/*
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
