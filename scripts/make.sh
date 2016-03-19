@@ -10,7 +10,8 @@ export LC_ALL=C
 set -o pipefail
 source ./configure
 
-# output ${OUTNAME}_unstripped and and $OUTNAME
+# Output ${OUTNAME}_unstripped and $OUTNAME, or just $OUTNAME if NOSTRIP is
+# set.
 OUTNAME=${1:-toybox}
 
 [ -z "$KCONFIG_CONFIG" ] && KCONFIG_CONFIG=".config"
@@ -117,7 +118,9 @@ fi
 
 # LINK needs optlibs.dat, above
 
-LINK="$(echo $LDOPTIMIZE $LDFLAGS -o ${OUTNAME}_unstripped -Wl,--as-needed $(cat generated/optlibs.dat))"
+[ -z "$NOSTRIP" ] && LINKOUT=${OUTNAME}_unstripped || LINKOUT=$OUTNAME
+
+LINK="$(echo $LDOPTIMIZE $LDFLAGS -o ${LINKOUT}  -Wl,--as-needed $(cat generated/optlibs.dat))"
 genbuildsh > generated/build.sh && chmod +x generated/build.sh || exit 1
 
 echo "Make generated/config.h from $KCONFIG_CONFIG."
@@ -299,10 +302,13 @@ done
 [ $DONE -ne 0 ] && exit 1
 
 do_loudly $BUILD $LFILES $LINK || exit 1
-if [ ! -z "$NOSTRIP" ] || ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
+if [ -z "$NOSTRIP" ] 
 then
-  echo "strip failed, using unstripped" && cp ${OUTNAME}_unstripped $OUTNAME ||
-  exit 1
+  if ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
+  then
+    echo "strip failed, using unstripped"
+    cp ${OUTNAME}_unstripped $OUTNAME || exit 1
+  fi
 fi
 
 # gcc 4.4's strip command is buggy, and doesn't set the executable bit on

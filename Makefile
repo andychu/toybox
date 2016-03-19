@@ -22,6 +22,7 @@ toybox toybox_unstripped: toybox_stuff
 ASAN_CC =
 # NOTE: This works but somehow we're not getting symbols in expr.c anymore.
 export ASAN_SYMBOLIZER_PATH =
+export NOSTRIP
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	ASAN_CC := $(CLANG_DIR)/bin/clang
@@ -31,10 +32,13 @@ endif
 ASAN_CFLAGS = -fsanitize=address -g
 
 toybox_asan: CC = $(ASAN_CC)
-toybox_asan: CFLAGS= $(ASAN_CFLAGS)
+toybox_asan: CFLAGS = $(ASAN_CFLAGS)
+# ASAN needs symbols
+toybox_asan: NOSTRIP = 1
 toybox_asan:
 	scripts/make.sh toybox_asan
 
+# Use unstripped binary because we want ASAN to show stack traces.
 asantest: export TOYBOX_BIN=toybox_asan
 asantest: toybox_asan
 	scripts/test.sh all
