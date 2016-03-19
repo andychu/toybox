@@ -5,6 +5,8 @@
 
 [ -f testing.sh ] && . testing.sh
 
+skip_if_not_root
+
 #testing "name" "command" "result" "infile" "stdin"
 
 root_fs=`df | grep "\/$" | awk '{print $1}'`
@@ -56,11 +58,11 @@ reCreateTmpFs
 mkdir -p testDir1/testDir2 testDir
 echo "abcdefghijklmnopqrstuvwxyz" > testDir1/testDir2/testFile
 testing "-o bind dir1 dir2" \
-  'mount -o bind testDir1 testDir >/dev/null 2>&1 && \
+  'mount -o bind testDir1 testDir && \
    cat testDir/testDir2/testFile && sleep 1 && umount testDir' \
   "abcdefghijklmnopqrstuvwxyz\n" "" ""
 testing "-o rbind dir1 dir2" \
-  'mount -o rbind testDir1 testDir >/dev/null 2>&1 && \
+  'mount -o rbind testDir1 testDir && \
    cat testDir/testDir2/testFile && sleep 1 && umount testDir' \
   "abcdefghijklmnopqrstuvwxyz\n" "" ""
 testing "-o loop $tmp_b_fs /mnt" \

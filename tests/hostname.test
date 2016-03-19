@@ -7,12 +7,16 @@
 
 #testing "name" "command" "result" "infile" "stdin"
 
-# Get system hostname
-hostnameExe=`which hostname`
-hostnameOut=`$hostnameExe`
+# Use host command to get the hostname
+expected_out=$($HOST_BIN_HOSTNAME)
 
 # New hostname
-NewHostname="NewHostName.system"
+new_hostname="NewHostName.system"
 
-testing "get" "hostname" "$hostnameOut\n" "" ""
-testing "set, Get and then Reset" "hostname $NewHostname; hostname; hostname $hostnameOut; hostname" "$NewHostname\n$hostnameOut\n" "" ""
+testing "get" "hostname" "$expected_out\n" "" ""
+
+skip_if_not_root
+
+testing "set, get and reset" \
+  "hostname $new_hostname; hostname; hostname $expected_out; hostname" \
+  "$new_hostname\n$expected_out\n" "" ""

@@ -6,25 +6,30 @@
 [ -f testing.sh ] && . testing.sh
 
 #testing "name" "command" "result" "infile" "stdin"
+
 testing "overflow" \
-  'bzcat "$TOPDIR/files/bzcat/overflow.bz2" >/dev/null 2>/dev/null;
-   [ $? -eq 1 ] && echo good' "good\n" "" ""
+  'bzcat "$TOPDIR/tests/files/bzcat/overflow.bz2" 2>&1; echo $?' \
+  "bzcat: bad data\n1\n" "" ""
 
 echo "hello" > file
-tar -cjf file.tar.bz2 file
-# Get system bzcat
-bzcatExe=`which bzcat`
-$bzcatExe file.tar.bz2 > bzcatOut
-testing "- decompresses a single file" "bzcat file.tar.bz2 > Tempfile && echo "yes"; diff Tempfile bzcatOut && echo "yes"; rm -rf file* bzcatOut Tempfile" "yes\nyes\n" "" ""
+$HOST_BIN_TAR -cjf file.tar.bz2 file
 
-#testing "name" "command" "result" "infile" "stdin"
-echo "hello" > file1
-echo "hi" > file2
-echo "Hi, Good morning !! I am a bzcat tester" > file3
-tar -cjf file1.tar.bz2 file1
-tar -cjf file2.tar.bz2 file2
-tar -cjf file3.tar.bz2 file3
-# Get system bzcat
-bzcatExe=`which bzcat`
-$bzcatExe file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > bzcatOut
-testing "- decompresses multiple files" "bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > Tempfile && echo "yes" ; diff Tempfile bzcatOut && echo "yes"; rm -rf file* bzcatOut Tempfile " "yes\nyes\n" "" ""
+$HOST_BIN_BZCAT file.tar.bz2 > expected_out
+
+testing "decompresses a single file" \
+  'bzcat file.tar.bz2 > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
+  "yes\nyes\n" "" ""
+
+echo "one" > file1
+echo "two" > file2
+echo "three" > file3
+
+$HOST_BIN_TAR -cjf file1.tar.bz2 file1
+$HOST_BIN_TAR -cjf file2.tar.bz2 file2
+$HOST_BIN_TAR -cjf file3.tar.bz2 file3
+
+$HOST_BIN_BZCAT file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > expected_out
+
+testing "decompresses multiple files" \
+  'bzcat file1.tar.bz2 file2.tar.bz2 file3.tar.bz2 > Tempfile && echo yes; diff Tempfile expected_out && echo yes' \
+  "yes\nyes\n" "" ""

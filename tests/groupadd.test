@@ -4,6 +4,8 @@
 
 [ -f testing.sh ] && . testing.sh
 
+skip_if_not_root
+
 # 70 characters long string; hereafter, we will use it as per our need.
 _s70="abcdefghijklmnopqrstuvwxyz123456789abcdefghijklmnopqrstuvwxyz123456789"
 

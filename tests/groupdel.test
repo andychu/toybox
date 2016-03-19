@@ -5,6 +5,8 @@
 
 [ -f testing.sh ] && . testing.sh
 
+skip_if_not_root
+
 # Redirecting all output to /dev/null for grep and delgroup
 arg="&>/dev/null"
 

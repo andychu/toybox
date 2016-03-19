@@ -2,9 +2,9 @@
 
 [ -f testing.sh ] && . testing.sh
 
-#testing "name" "command" "result" "infile" "stdin"
+skip_if_not_root
 
-# chattr - Testcases
+#testing "name" "command" "result" "infile" "stdin"
 
 mkdir testattr
 IN="cd testattr"

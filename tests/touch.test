@@ -15,16 +15,16 @@ testing "-d" \
   "touch -d 2009-02-13T23:31:30Z walrus && date -r walrus +%s" \
   "1234567890\n" "" ""
 
+# NOTE: Using host date because toybox date doesn't support %N.
 testing "-d nanoseconds" \
-  "touch -d 2009-02-13T23:31:30.123456789Z walrus && date -r walrus +%s.%N" \
+  "touch -d 2009-02-13T23:31:30.123456789Z walrus && $HOST_BIN_DATE -r walrus +%s.%N" \
   "1234567890.123456789\n" "" ""
 
 testing "-r" \
-  "touch -r walrus walrus2 && date -r walrus2 +%s.%N" \
+  "touch -r walrus walrus2 && $HOST_BIN_DATE -r walrus2 +%s.%N" \
    "1234567890.123456789\n" "" ""
 
 #testing "-a"
 #testing "-m"
 #testing "-am"
 #testing "-t"
-rm walrus walrus2
