@@ -168,13 +168,11 @@ print_singlemake()
 $build_name: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh $cmd
 
-# TODO: respect CLANG_DIR
-export PREFIX  # need to pass this through
-asan/$build_name: PREFIX = asan/
-asan/$build_name: CC = clang 
+asan/$build_name: CC = \$(ASAN_CC)
 asan/$build_name: CFLAGS = -fsanitize=address -g
+asan/$build_name: export PREFIX = asan/
 asan/$build_name: $cmd_src *.[ch] lib/*.[ch]
-	scripts/single.sh $cmd
+	echo \$(ASAN_CC) && scripts/single.sh $cmd
 
 $test_name:
 	scripts/test.sh single $cmd
