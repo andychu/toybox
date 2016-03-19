@@ -1,11 +1,13 @@
 #!/bin/bash
 #
+# Inspects the system and generates various config files.
+#
 # Usage:
 #   scripts/genconfig.sh
 #
-# Generates these files:
-# - generated/Config.in, generated/Config.probed - kconfig source
-# - generated/cflags - CFLAGS used by scripts/make.sh:
+# Outputs:
+# - generated/Config.in, generated/Config.probed - kconfig input
+# - generated/cflags - CFLAGS used by scripts/make.sh
 # - .singlemake - targets included by Makefile
 #
 # This has to be a separate file from scripts/make.sh so it can be called
