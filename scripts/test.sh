@@ -59,7 +59,8 @@ single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
 
-  # If set to a path relative to the top directory
+  # SINGLE_BIN can be set the path of a built binary relative to the repo root.
+  # TODO: This should be the only case?
   if [ -n "$SINGLE_BIN" ]
   then
     # make a directory and set your PATH to it
