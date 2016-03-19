@@ -54,11 +54,19 @@ setup_test_env()
   fi
 }
 
+readonly CLANG_DIR=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04
+
 # Run tests for specific commands.
 single()
 {
   # Build individual binaries, e.g. generated/testdir/expr
-  [ -z "$TEST_HOST" ] && PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
+
+  if [ -n "$ASAN" ]; then
+    export CC=$CLANG_DIR/bin/clang
+    export CFLAGS='-fsanitize=address -g'
+  fi
+  [ -z "$TEST_HOST" ] &&
+    PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
 
   setup_test_env
 
