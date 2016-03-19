@@ -32,6 +32,10 @@ toybox_asan: CFLAGS= $(ASAN_CFLAGS)
 toybox_asan:
 	scripts/make.sh toybox_asan
 
+asantest: export TOYBOX_BIN=toybox_asan
+asantest: toybox_asan
+	scripts/test.sh all
+
 .PHONY: clean distclean baseline bloatcheck install install_flat \
 	uinstall uninstall_flat test tests help toybox_stuff change \
 	list list_working list_pending
