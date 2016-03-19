@@ -53,5 +53,6 @@ do
   echo "# CONFIG_TOYBOX is not set" >> "$KCONFIG_CONFIG" &&
   grep "CONFIG_TOYBOX_" .config >> "$KCONFIG_CONFIG" &&
 
+  mkdir -p $PREFIX
   scripts/make.sh $PREFIX$i || exit 1
 done
