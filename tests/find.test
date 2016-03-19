@@ -5,8 +5,11 @@
 mkdir dir
 cd dir
 touch file
+
+sleep 0.1  # so that 'link' is newer than 'file'; tested below
 mkfifo fifo
 ln -s fifo link
+
 cd ..
 touch b
 
@@ -90,4 +93,3 @@ testing "-name (no arguments)" \
   "find dir -name 2>&1" "find: '-name' needs 1 arg\n" "" ""
 testing "-iname (no arguments)" \
   "find dir -iname 2>&1" "find: '-iname' needs 1 arg\n" "" ""
-rm -rf dir
