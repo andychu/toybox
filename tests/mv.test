@@ -92,7 +92,8 @@ testing "dir to existing dir" \
 rm -rf dir*
 
 touch file1 file2
-testing "force (dest exists)" \
+chmod 400 file1 file2
+testing "force over unwritable" \
   "mv -f file1 file2 && [ ! -e file1 -a -e file2 ] && echo yes" \
   "yes\n" "" ""
 rm -f file*
