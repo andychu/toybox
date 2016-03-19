@@ -309,6 +309,6 @@ fi
 # its output the way SUSv4 suggests it do so. While we're at it, make sure
 # we don't have the "w" bit set so things like bzip2's "cp -f" install don't
 # overwrite our binary through the symlink.
-do_loudly chmod 555 toybox || exit 1
+do_loudly chmod 555 $OUTNAME || exit 1
 
 echo
