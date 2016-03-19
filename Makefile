@@ -22,13 +22,14 @@ toybox toybox_unstripped: toybox_stuff
 	uinstall uninstall_flat test tests help toybox_stuff change \
 	list list_working list_pending
 
-# .singlemake targets use ASAN_CC.
+# .singlemake targets use ASAN_CC and ASAN_CFLAGS.
 ASAN_CC =
 ifdef CLANG_DIR
 	ASAN_CC := $(CLANG_DIR)/bin/clang
 else
 	ASAN_CC := clang
 endif
+ASAN_CFLAGS = -fsanitize=address -g
 
 include kconfig/Makefile
 -include .singlemake
