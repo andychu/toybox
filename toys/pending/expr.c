@@ -118,6 +118,7 @@ static void re(char *target, char *pattern, struct value *ret)
     if (pat.re_nsub > 0) ret->s = "";
     else assign_int(ret, 0);
   }
+  regfree(&pat);
 }
 
 // 4 different signatures of operators.  S = string, I = int, SI = string or
