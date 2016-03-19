@@ -172,7 +172,7 @@ asan/$build_name: CC = \$(ASAN_CC)
 asan/$build_name: CFLAGS = -fsanitize=address -g
 asan/$build_name: export PREFIX = asan/
 asan/$build_name: $cmd_src *.[ch] lib/*.[ch]
-	echo \$(ASAN_CC) && scripts/single.sh $cmd
+	scripts/single.sh $cmd
 
 $test_name:
 	scripts/test.sh single $cmd
