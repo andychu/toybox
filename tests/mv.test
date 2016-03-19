@@ -8,28 +8,28 @@
 #testing "name" "command" "result" "infile" "stdin"
 
 touch file
-testing "old_file to new_file" \
+testing "file to file" \
   "mv file file1 && [ ! -e file -a -f file1 ] && echo yes" \
   "yes\n" "" ""
 rm -f file*
 
 touch file
 mkdir dir
-testing "file to a dir" \
+testing "file to dir" \
   "mv file dir && [ ! -e file -a -f dir/file ] && echo yes" \
   "yes\n" "" ""
 rm -rf file* dir*
 
 mkdir dir
-testing "old_dir to new_dir" \
-  "mv dir dir1 && [ ! -e dir -a -d dir1 ] &&
-   echo yes" "yes\n" "" ""
+testing "dir to dir" \
+  "mv dir dir1 && [ ! -e dir -a -d dir1 ] && echo yes" \
+  "yes\n" "" ""
 rm -rf dir*
 
 mkdir dir1 dir2
 touch file1 file2 dir1/file3
 ln -s file1 link1
-testing "multiple files/dir to a dir" \
+testing "multiple files/dirs to a dir" \
   "mv file1 file2 link1 dir1 dir2 &&
   [ ! -e file1 -a ! -e file2 -a ! -e link1 -a ! -e dir1 ] &&
   [ -f dir2/file1 -a -f dir2/file2 -a -L dir2/link1 -a -d dir2/dir1 ] &&
@@ -37,27 +37,15 @@ testing "multiple files/dir to a dir" \
   "file1\n" "" ""
 rm -rf file* link* dir*
 
-touch file1
-testing "a empty file to new_file" \
-  "mv file1 file2 && [ ! -e file1 -a -f file2 ] && stat -c %s file2" \
-  "0\n" "" ""
-rm -rf file*
-
-mkdir dir1
-testing "empty dir to new_dir" \
-  "mv dir1 dir2 && [ ! -d dir1 -a -d dir2 ] && echo yes" \
-  "yes\n" "" ""
-rm -rf dir*
-
 dd if=/dev/zero of=file1 seek=10k count=1 >/dev/null 2>&1
-testing "file new_file (random file)" \
+testing "random file to new file" \
   "mv file1 file2 && [ ! -e file1 -a -f file2 ] && stat -c %s file2" \
   "5243392\n" "" ""
 rm -f file*
 
 touch file1
 ln -s file1 link1
-testing "link new_link (softlink)" \
+testing "symlink to new symlink" \
   "mv link1 link2 && [ ! -e link1 -a -L link2 ] && readlink link2" \
   "file1\n" "" ""
 unlink tLink2 &>/dev/null
@@ -65,7 +53,7 @@ rm -f file* link*
 
 touch file1
 ln file1 link1
-testing "link new_link (hardlink)" \
+testing "hard link to new hardlink" \
   "mv link1 link2 && [ ! -e link1 -a -f link2 -a file1 -ef link2 ] && echo yes" \
   "yes\n" "" ""
 unlink link2 &>/dev/null
@@ -73,7 +61,7 @@ rm -f file* link*
 
 touch file1
 chmod a-r file1
-testing "file new_file (unreadable)" \
+testing "file to unreadable file" \
   "mv file1 file2 && [ ! -e file1 -a -f file2 ] && echo yes" \
   "yes\n" "" ""
 rm -f file*
@@ -81,7 +69,7 @@ rm -f file*
 touch file1
 ln file1 link1
 mkdir dir1
-testing "file link dir (hardlink)" \
+testing "file hardlink dir" \
   "mv file1 link1 dir1 &&
   [ ! -e file1 -a ! -e link1 -a -f dir1/file1 -a -f dir1/link1 ] &&
   [ dir1/file1 -ef dir1/link1 ] && echo yes" \
@@ -90,15 +78,15 @@ rm -rf file* link* dir*
 
 mkdir -p dir1/dir2 dir3
 touch dir1/dir2/file1 dir1/dir2/file2
-testing "dir1/dir2 dir3/new_dir" \
-  "mv dir1/dir2 dir3/dir4 &&
-  [ ! -e dir1/dir2 -a -d dir3/dir4 -a -f dir3/dir4/file1 ] &&
-  [ -f dir3/dir4/file2 ] && echo yes" \
+testing "dir to new dir" \
+  "mv dir1/dir2 dir3/new &&
+  [ ! -e dir1/dir2 -a -d dir3/new -a -f dir3/new/file1 ] &&
+  [ -f dir3/new/file2 ] && echo yes" \
   "yes\n" "" ""
 rm -rf file* dir*
 
 mkdir dir1 dir2
-testing "move a dir to a dir (dest exists)" \
+testing "dir to existing dir" \
   "mv dir1 dir2 && [ ! -e dir1 -a -d dir2/dir1 ] && echo yes" \
   "yes\n" "" ""
 rm -rf dir*
