@@ -26,7 +26,9 @@ SAN_CC =
 export ASAN_SYMBOLIZER_PATH =
 export MSAN_SYMBOLIZER_PATH =
 export UBSAN_SYMBOLIZER_PATH =
-export NOSTRIP
+export NOSTRIP =
+
+export UBSAN_OPTIONS = print_stacktrace=1
 
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
@@ -72,7 +74,6 @@ toybox_ubsan:
 	scripts/make.sh toybox_ubsan
 
 ubsantest: export TOYBOX_BIN = toybox_ubsan
-ubsantest: export UBSAN_OPTIONS = print_stacktrace=1
 ubsantest: toybox_ubsan
 	scripts/test.sh all
 
@@ -114,9 +115,9 @@ change:
 	scripts/change.sh
 
 clean::
-	rm -rf toybox toybox_unstripped \ generated change .singleconfig*
+	rm -rf toybox toybox_unstripped generated change .singleconfig*
 clean::
-	rm -rf asan/* msan/* toybox_asan toybox_msan
+	rm -rf asan/* msan/* ubsan/* toybox_asan toybox_msan toybox_ubsan
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
