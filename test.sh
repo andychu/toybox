@@ -57,10 +57,9 @@ process_flag() {
   # Common between all three
   case $flag in
     -asan|-msan|-ubsan)
-      echo 'hi'
+      SAN_FLAG=$flag
       export NOSTRIP=1  # Instruct scripts/make.sh not to strip
       export CC=$SAN_CC
-      SAN_FLAG=$flag
       ;;
     *)
       die "Invalid flag $flag"
@@ -69,20 +68,17 @@ process_flag() {
 
   case $flag in
     -asan)
-      echo 'asan'
-      export CFLAGS='-fsanitize=address -g'
       TOYBOX_BIN=toybox_asan
+      export CFLAGS='-fsanitize=address -g'
       ;;
     -msan)
-      echo 'msan'
-      export CFLAGS='-fsanitize=memory -g'
       TOYBOX_BIN=toybox_msan
+      export CFLAGS='-fsanitize=memory -g'
       ;;
     -ubsan)
-      echo 'ubsan'
+      TOYBOX_BIN=toybox_ubsan
       export CFLAGS='-fsanitize=undefined -fno-omit-frame-pointer -g'
       export UBSAN_OPTIONS='print_stacktrace=1'
-      TOYBOX_BIN=toybox_ubsan
       ;;
   esac
 }
