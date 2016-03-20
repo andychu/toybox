@@ -46,8 +46,10 @@ else
 	SAN_CC=clang
 fi
 
-BUILD_TARGET=toybox
-USING_SAN=  # Are we running under any Sanitizer?
+TOYBOX_BIN=toybox
+# Set when we're building a single binary
+SINGLE_BIN=
+SAN_FLAG=  # Are we running under any Sanitizer?
 
 process_flag() {
   local flag=$1
@@ -58,7 +60,11 @@ process_flag() {
       echo 'hi'
       export NOSTRIP=1  # Instruct scripts/make.sh not to strip
       export CC=$SAN_CC
-      USING_SAN=1
+      SAN_FLAG=$flag
+      ;;
+    *)
+      echo "Invalid flag $flag"
+      exit 1
       ;;
   esac
 
@@ -66,18 +72,18 @@ process_flag() {
     -asan)
       echo 'asan'
       export CFLAGS='-fsanitize=address -g'
-      BUILD_TARGET=toybox_asan
+      TOYBOX_BIN=toybox_asan
       ;;
     -msan)
       echo 'msan'
       export CFLAGS='-fsanitize=memory -g'
-      BUILD_TARGET=toybox_msan
+      TOYBOX_BIN=toybox_msan
       ;;
     -ubsan)
       echo 'ubsan'
       export CFLAGS='-fsanitize=undefined -fno-omit-frame-pointer -g'
       export UBSAN_OPTIONS='print_stacktrace=1'
-      BUILD_TARGET=toybox_ubsan
+      TOYBOX_BIN=toybox_ubsan
       ;;
   esac
 }
@@ -85,9 +91,55 @@ process_flag() {
 # TODO: Add timing?  That only prints if it succeeds
 
 all() {
-  make $BUILD_TARGET
-  TOYBOX_BIN=$BUILD_TARGET ./test.sh all
+  if [ $# -gt 0 ]
+  then
+    case $1 in 
+      -*)
+        process_flag $1
+        shift
+        ;;
+    esac
+  fi
+
+  make $TOYBOX_BIN
+
+  local tree_dir=generated/tree-all$SAN_FLAG
+  # The symlinks have to go up two levels to the root.
+  make_tree_dir $tree_dir ../../$TOYBOX_BIN
+
+  ls $tree_dir
+
+  return
+  ./test.sh all
 }
+
+# Make a dir, linking every binary to the toybox binary.
+make_tree_dir() {
+  local tree_dir=$1
+  local toybox_bin=$2
+
+  # Make there aren't old commands lying around.
+  rm -rf $tree_dir
+  mkdir -p $tree_dir
+  toys_grep | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
+}
+
+# Adapted from genconfig.sh
+toys_grep() {
+  grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
+    sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort
+}
+
+# Adapted from make.sh.  Doesn't work because we get '-toysh' for some reason
+toys_sed() {
+  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c \
+	| sed -e 's/\(.*TOY(\)\([^,]*\),\(.*\)/\2/' | sort
+}
+
+use_lines() {
+  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c 
+}
+
 
 single() {
   if [ $# -eq 0 ]
@@ -96,7 +148,7 @@ single() {
     exit 1
   fi
   case $1 in 
-    -)
+    -*)
       process_flag $1
       shift
       ;;
@@ -106,11 +158,15 @@ single() {
   do
     # Special case for running tests of single binaries: build a standalone
     # binary for each command.   There's no point in building standalone 
-    #[ -z "$USING_SAN" ] && BUILD_TARGET=generated/single/$cmd
-    [ -z "$USING_SAN" ] && BUILD_TARGET=$cmd
+    #[ -z "$SAN_FLAG" ] && BUILD_TARGET=generated/single/$cmd
+    [ -z "$SAN_FLAG" ] && BUILD_TARGET=$cmd
+
+    # e.g. generated/tree-grep or generated/tree-grep-asan
+    local tree_dir=generated/tree-$cmd$SAN_FLAG
 
     make $BUILD_TARGET
-    # This builds generated
+
+    make
 
     # Now make a build tree.
     # scripts/test.sh shouldn't do it.
