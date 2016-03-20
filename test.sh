@@ -88,6 +88,23 @@ process_flag() {
   esac
 }
 
+# Adapted from genconfig.sh
+toys_grep() {
+  grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
+    sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort
+}
+
+# Make a dir, linking every binary to the toybox binary.
+make_tree_dir() {
+  local tree_dir=$1
+  local toybox_bin=$2
+
+  # Make there aren't old commands lying around.
+  rm -rf $tree_dir
+  mkdir -p $tree_dir
+  toys_grep | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
+}
+
 # TODO: Add timing?  That only prints if it succeeds
 
 all() {
@@ -107,39 +124,8 @@ all() {
   # The symlinks have to go up two levels to the root.
   make_tree_dir $tree_dir ../../$TOYBOX_BIN
 
-  ls $tree_dir
-
-  return
   ./test.sh all
 }
-
-# Make a dir, linking every binary to the toybox binary.
-make_tree_dir() {
-  local tree_dir=$1
-  local toybox_bin=$2
-
-  # Make there aren't old commands lying around.
-  rm -rf $tree_dir
-  mkdir -p $tree_dir
-  toys_grep | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
-}
-
-# Adapted from genconfig.sh
-toys_grep() {
-  grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
-    sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort
-}
-
-# Adapted from make.sh.  Doesn't work because we get '-toysh' for some reason
-toys_sed() {
-  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c \
-	| sed -e 's/\(.*TOY(\)\([^,]*\),\(.*\)/\2/' | sort
-}
-
-use_lines() {
-  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c 
-}
-
 
 single() {
   if [ $# -eq 0 ]
@@ -174,6 +160,17 @@ single() {
     # TODO: Maybe install.sh here -- get it out of test.sh
     SINGLE_BIN=generated/single/$cmd time scripts/test.sh single $cmd
   done
+}
+
+
+# Adapted from make.sh.  Doesn't work because we get '-toysh' for some reason
+toys_sed() {
+  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c \
+	| sed -e 's/\(.*TOY(\)\([^,]*\),\(.*\)/\2/' | sort
+}
+
+use_lines() {
+  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c 
 }
 
 # Flow
