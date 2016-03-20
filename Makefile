@@ -21,15 +21,9 @@ toybox toybox_unstripped: toybox_stuff
 # .singlemake targets use SAN_CC and ASAN_CFLAGS.
 #
 # Compiler for all sanitizer functions.
+export NOSTRIP
+
 SAN_CC =
-# NOTE: This works but somehow we're not getting symbols in expr.c anymore.
-export ASAN_SYMBOLIZER_PATH =
-export MSAN_SYMBOLIZER_PATH =
-export UBSAN_SYMBOLIZER_PATH =
-export NOSTRIP =
-
-export UBSAN_OPTIONS = print_stacktrace=1
-
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	MSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
@@ -50,11 +44,6 @@ toybox_asan: NOSTRIP = 1
 toybox_asan:
 	scripts/make.sh toybox_asan
 
-# Use unstripped binary because we want ASAN to show stack traces.
-asantest: export TOYBOX_BIN = toybox_asan
-asantest: toybox_asan
-	scripts/test.sh all
-
 toybox_msan: CC = $(SAN_CC)
 toybox_msan: CFLAGS = $(MSAN_CFLAGS)
 # For stack traces
@@ -62,22 +51,12 @@ toybox_msan: NOSTRIP = 1
 toybox_msan:
 	scripts/make.sh toybox_msan
 
-msantest: export TOYBOX_BIN = toybox_msan
-msantest: toybox_msan
-	scripts/test.sh all
-
 toybox_ubsan: CC = $(SAN_CC)
 toybox_ubsan: CFLAGS = $(UBSAN_CFLAGS)
 # For stack traces
 toybox_ubsan: NOSTRIP = 1
 toybox_ubsan:
 	scripts/make.sh toybox_ubsan
-
-ubsantest: export TOYBOX_BIN = toybox_ubsan
-ubsantest: toybox_ubsan
-	scripts/test.sh all
-
-.PHONY: asantest msantest
 
 .PHONY: clean distclean baseline bloatcheck install install_flat \
 	uinstall uninstall_flat test tests help toybox_stuff change \
@@ -115,9 +94,8 @@ change:
 	scripts/change.sh
 
 clean::
-	rm -rf toybox toybox_unstripped generated change .singleconfig*
-clean::
-	rm -rf asan/* msan/* ubsan/* toybox_asan toybox_msan toybox_ubsan
+	rm -rf toybox toybox_unstripped toybox_asan toybox_msan toybox_ubsan \
+		generated change .singleconfig*
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
