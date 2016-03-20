@@ -23,12 +23,11 @@ static void do_rev(int fd, char *name)
     int len, i;
 
     if (!(c = get_line(fd))) break;
-    len = strlen(c) - 1;
-    for (i = 0; i <= len/2; i++) {
+    len = strlen(c);
+    for (i = 0; i < len/2; i++) {
       char tmp = c[i];
-
-      c[i] = c[len-i];
-      c[len-i] = tmp;
+      c[i] = c[len-1-i];
+      c[len-1-i] = tmp;
     }
     xputs(c);
     free(c);
