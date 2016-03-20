@@ -42,7 +42,7 @@ setup_test_env()
   HOST_BIN_DATE=$(which date)
   HOST_BIN_HOSTNAME=$(which hostname)
 
-  PATH="$BIN_DIR:$PATH"  # Make sure the tests can use toybox tools
+  PATH="$TOYBOX_TREE_DIR:$PATH"  # Make sure the tests can use toybox tools
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.

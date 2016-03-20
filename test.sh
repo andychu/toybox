@@ -34,7 +34,7 @@ Example:
 EOF
 }
 
-die() { echo "$@"; exit 1; }
+readonly TOPDIR=${TOPDIR:-$PWD}
 
 if [ -n "$CLANG_DIR" ]
 then
@@ -50,6 +50,8 @@ fi
 
 TOYBOX_BIN=toybox
 SAN_FLAG=  # Are we running under any Sanitizer?
+
+die() { echo "$@"; exit 1; }
 
 process_flag() {
   local flag=$1
@@ -90,7 +92,7 @@ toys_grep() {
 }
 
 # Make a dir, linking every binary to the toybox binary.
-make_tree_dir() {
+make_toybox_tree() {
   local tree_dir=$1
   local toybox_bin=$2
 
@@ -117,9 +119,9 @@ all() {
 
   local tree_dir=generated/tree-all$SAN_FLAG
   # The symlinks have to go up two levels to the root.
-  make_tree_dir $tree_dir ../../$TOYBOX_BIN
+  make_toybox_tree $tree_dir ../../$TOYBOX_BIN
 
-  PATH=$tree_dir:$PATH scripts/test.sh all
+  TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh all
 }
 
 single() {
@@ -135,14 +137,19 @@ single() {
 
   for cmd in "$@"
   do
-    # TODO: change to generated/single/$cmd
-    [ -z "$SAN_FLAG" ] && make $cmd
-
     # e.g. generated/tree-grep or generated/tree-grep-asan
     local tree_dir=generated/tree-$cmd$SAN_FLAG
-    make_tree_dir $tree_dir ../../$TOYBOX_BIN
+    make_toybox_tree $tree_dir ../../$TOYBOX_BIN
 
-    PATH=$tree_dir:$PATH scripts/test.sh single $cmd
+    # TODO: change to generated/single/$cmd
+    if [ -z "$SAN_FLAG" ]
+    then
+      make $cmd
+      # Copy over the symlink!
+      cp --verbose --force $cmd $tree_dir
+    fi
+
+    TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh single $cmd
   done
 }
 
