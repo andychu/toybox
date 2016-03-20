@@ -98,8 +98,9 @@ change:
 	scripts/change.sh
 
 clean::
-	rm -rf toybox toybox_unstripped toybox_asan toybox_asan_unstripped \
-		generated change .singleconfig* asan/*
+	rm -rf toybox toybox_unstripped \ generated change .singleconfig*
+clean::
+	rm -rf asan/* msan/* toybox_asan toybox_msan
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
