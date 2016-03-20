@@ -168,6 +168,9 @@ print_singlemake()
 $build_name: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh $cmd
 
+$test_name:
+	scripts/test.sh single $cmd
+
 asan/$build_name: CC = \$(SAN_CC)
 asan/$build_name: CFLAGS = \$(ASAN_CFLAGS)
 asan/$build_name: export PREFIX = asan/
@@ -175,14 +178,20 @@ asan/$build_name: NOSTRIP = 1
 asan/$build_name: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh $cmd
 
-$test_name:
-	scripts/test.sh single $cmd
-
 asantest_$build_name: export SINGLE_BIN = asan/$build_name
 asantest_$build_name: asan/$build_name
 	scripts/test.sh single $cmd
 
+msan/$build_name: CC = \$(SAN_CC)
+msan/$build_name: CFLAGS = \$(MSAN_CFLAGS)
+msan/$build_name: export PREFIX = msan/
+msan/$build_name: NOSTRIP = 1
+msan/$build_name: $cmd_src *.[ch] lib/*.[ch]
+	scripts/single.sh $cmd
 
+msantest_$build_name: export SINGLE_BIN = msan/$build_name
+msantest_$build_name: msan/$build_name
+	scripts/test.sh single $cmd
 EOF
 
     [ "${cmd_src/pending//}" != "$cmd_src" ] &&
