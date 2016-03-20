@@ -34,6 +34,8 @@ Example:
 EOF
 }
 
+die() { echo "$@"; exit 1; }
+
 if [ -n "$CLANG_DIR" ]
 then
   # These are needed to show line numbers in stack traces.
@@ -47,8 +49,6 @@ else
 fi
 
 TOYBOX_BIN=toybox
-# Set when we're building a single binary
-SINGLE_BIN=
 SAN_FLAG=  # Are we running under any Sanitizer?
 
 process_flag() {
@@ -63,8 +63,7 @@ process_flag() {
       SAN_FLAG=$flag
       ;;
     *)
-      echo "Invalid flag $flag"
-      exit 1
+      die "Invalid flag $flag"
       ;;
   esac
 
@@ -124,15 +123,11 @@ all() {
   # The symlinks have to go up two levels to the root.
   make_tree_dir $tree_dir ../../$TOYBOX_BIN
 
-  ./test.sh all
+  PATH=$tree_dir:$PATH scripts/test.sh all
 }
 
 single() {
-  if [ $# -eq 0 ]
-  then
-    echo "At least one command is required."
-    exit 1
-  fi
+  [ $# -eq 0 ] && die "At least one command is required."
   case $1 in 
     -*)
       process_flag $1
@@ -140,25 +135,18 @@ single() {
       ;;
   esac
 
+  make $TOYBOX_BIN
+
   for cmd in "$@"
   do
-    # Special case for running tests of single binaries: build a standalone
-    # binary for each command.   There's no point in building standalone 
-    #[ -z "$SAN_FLAG" ] && BUILD_TARGET=generated/single/$cmd
-    [ -z "$SAN_FLAG" ] && BUILD_TARGET=$cmd
+    # TODO: change to generated/single/$cmd
+    [ -z "$SAN_FLAG" ] && make $cmd
 
     # e.g. generated/tree-grep or generated/tree-grep-asan
     local tree_dir=generated/tree-$cmd$SAN_FLAG
+    make_tree_dir $tree_dir ../../$TOYBOX_BIN
 
-    make $BUILD_TARGET
-
-    make
-
-    # Now make a build tree.
-    # scripts/test.sh shouldn't do it.
-
-    # TODO: Maybe install.sh here -- get it out of test.sh
-    SINGLE_BIN=generated/single/$cmd time scripts/test.sh single $cmd
+    PATH=$tree_dir:$PATH scripts/test.sh single $cmd
   done
 }
 
