@@ -25,11 +25,13 @@ SAN_CC =
 # NOTE: This works but somehow we're not getting symbols in expr.c anymore.
 export ASAN_SYMBOLIZER_PATH =
 export MSAN_SYMBOLIZER_PATH =
+export UBSAN_SYMBOLIZER_PATH =
 export NOSTRIP
 
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	MSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
+	UBSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	SAN_CC := $(CLANG_DIR)/bin/clang
 else
 	SAN_CC := clang
@@ -37,7 +39,7 @@ endif
 
 ASAN_CFLAGS = -fsanitize=address -g
 MSAN_CFLAGS = -fsanitize=memory -g
-UBSAN_CFLAGS = -fsanitize=undefined -g
+UBSAN_CFLAGS = -fsanitize=undefined -fno-omit-frame-pointer -g
 
 toybox_asan: CC = $(SAN_CC)
 toybox_asan: CFLAGS = $(ASAN_CFLAGS)
@@ -70,6 +72,7 @@ toybox_ubsan:
 	scripts/make.sh toybox_ubsan
 
 ubsantest: export TOYBOX_BIN = toybox_ubsan
+ubsantest: export UBSAN_OPTIONS = print_stacktrace=1
 ubsantest: toybox_ubsan
 	scripts/test.sh all
 
