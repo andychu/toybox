@@ -797,7 +797,7 @@ void diff_main(void)
 
   if (S_ISDIR(st[0].st_mode) && S_ISDIR(st[1].st_mode)) {
     for (j = 0; j < 2; j++) {
-      memset(&dir[j], 0, sizeof(dir));
+      memset(&dir[j], 0, sizeof(dir[0]));
       dirtree_flagread(files[j], DIRTREE_SYMFOLLOW, list_dir);
       dir[j].nr_elm = TT.size; //size updated in list_dir
       qsort(&(dir[j].list[1]), (TT.size - 1), sizeof(char*), cmp);

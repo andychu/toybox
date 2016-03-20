@@ -13,12 +13,18 @@ expected='--- left
  10
 +11
 '
-
 # Hm this only gives unified diffs?
 testing "simple" "diff left right" "$expected" "" ""
 
+
+expected='--- tree1/file
++++ tree2/file
+@@ -1 +1 @@
+-foo
++food
+'
 mkdir -p tree1 tree2
 echo foo > tree1/file
-echo food > tree1/file
+echo food > tree2/file
 
-testing "simple" "diff -r tree1 tree2" "$expected" "" ""
+testing "simple" "diff -r tree1 tree2 |tee out" "$expected" "" ""
