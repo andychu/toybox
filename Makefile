@@ -47,7 +47,7 @@ toybox_asan:
 	scripts/make.sh toybox_asan
 
 # Use unstripped binary because we want ASAN to show stack traces.
-asantest: export TOYBOX_BIN=toybox_asan
+asantest: export TOYBOX_BIN = toybox_asan
 asantest: toybox_asan
 	scripts/test.sh all
 
@@ -58,8 +58,19 @@ toybox_msan: NOSTRIP = 1
 toybox_msan:
 	scripts/make.sh toybox_msan
 
-msantest: export TOYBOX_BIN=toybox_msan
+msantest: export TOYBOX_BIN = toybox_msan
 msantest: toybox_msan
+	scripts/test.sh all
+
+toybox_ubsan: CC = $(SAN_CC)
+toybox_ubsan: CFLAGS = $(UBSAN_CFLAGS)
+# For stack traces
+toybox_ubsan: NOSTRIP = 1
+toybox_ubsan:
+	scripts/make.sh toybox_ubsan
+
+ubsantest: export TOYBOX_BIN = toybox_ubsan
+ubsantest: toybox_ubsan
 	scripts/test.sh all
 
 .PHONY: asantest msantest
