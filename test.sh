@@ -1,9 +1,6 @@
 #!/bin/bash
 #
-# Run toybox tests
-#
-# Usage:
-#   ./test.sh <function name>
+# Runs toybox tests, making sure to build the required binaries.
 
 set -o nounset
 set -o pipefail
@@ -11,7 +8,7 @@ set -o errexit
 
 usage() {
   cat <<EOF
-Runs toybox tests, make sure to build the required binaries.
+Runs toybox tests, making sure to build the required binaries.
 
   ./test.sh all [OPTION]                # Run all tests
   ./test.sh single [OPTION] COMMAND...  # Run tests for the given commands
@@ -153,7 +150,6 @@ single() {
   done
 }
 
-
 # Adapted from make.sh.  Doesn't work because we get '-toysh' for some reason
 toys_sed() {
   sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c \
@@ -173,6 +169,5 @@ use_lines() {
 # which is built by scripts/make.sh -- this uses sed on toys/*/*.c.  Kind of
 # like genconfig.sh
 #   stupid isnewer checks should go away.
-
 
 "$@"
