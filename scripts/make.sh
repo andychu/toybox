@@ -32,7 +32,7 @@ do_loudly()
 # Is anything under directory $2 newer than file $1
 isnewer()
 {
- [ ! -z "$(find "$2" -newer "$1" 2>/dev/null || echo yes)" ]
+  [ ! -z "$(find "$2" -newer "$1" 2>/dev/null || echo yes)" ]
 }
 
 echo "Generate headers from toys/*/*.c..."

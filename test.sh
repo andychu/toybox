@@ -17,9 +17,10 @@ Runs toybox tests, make sure to build the required binaries.
   ./test.sh single [OPTION] COMMAND...  # Run tests for the given commands
 
 Flags:
- -asan  Run under AddressSanitizer
- -msan  Run under MemorySanitizer
- -ubsan Run under UndefinedBehaviorSanitizer
+ -asan   Run under AddressSanitizer
+ -msan   Run under MemorySanitizer
+ -ubsan  Run under UndefinedBehaviorSanitizer
+ -allsan Run sequentially under the 3 sanitizers
 
 See http://clang.llvm.org/docs/index.html for details on these tools.
 
@@ -46,6 +47,7 @@ else
 fi
 
 BUILD_TARGET=toybox
+USING_SAN=  # Are we running under any Sanitizer?
 
 process_flag() {
   local flag=$1
@@ -56,6 +58,7 @@ process_flag() {
       echo 'hi'
       export NOSTRIP=1  # Instruct scripts/make.sh not to strip
       export CC=$SAN_CC
+      USING_SAN=1
       ;;
   esac
 
@@ -87,15 +90,45 @@ all() {
 }
 
 single() {
+  if [ $# -eq 0 ]
+  then
+    echo "At least one command is required."
+    exit 1
+  fi
+  case $1 in 
+    -)
+      process_flag $1
+      shift
+      ;;
+  esac
+
   for cmd in "$@"
   do
-    #make single/$cmd
-    # NOTE: under asan, etc. we don't build single binaries.  We s
+    # Special case for running tests of single binaries: build a standalone
+    # binary for each command.   There's no point in building standalone 
+    #[ -z "$USING_SAN" ] && BUILD_TARGET=generated/single/$cmd
+    [ -z "$USING_SAN" ] && BUILD_TARGET=$cmd
+
     make $BUILD_TARGET
+    # This builds generated
+
+    # Now make a build tree.
+    # scripts/test.sh shouldn't do it.
 
     # TODO: Maybe install.sh here -- get it out of test.sh
     SINGLE_BIN=generated/single/$cmd time scripts/test.sh single $cmd
   done
 }
+
+# Flow
+# CODE scripts/install.sh -> 
+# DATA generated/instlist ->
+# CODE which is built with $HOST_CC
+# DATA scripts/install.c, which includes
+# DATA generated/newtoys.h
+# which is built by scripts/make.sh -- this uses sed on toys/*/*.c.  Kind of
+# like genconfig.sh
+#   stupid isnewer checks should go away.
+
 
 "$@"
