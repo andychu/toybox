@@ -178,8 +178,8 @@ asan/$build_name: $cmd_src *.[ch] lib/*.[ch]
 $test_name:
 	scripts/test.sh single $cmd
 
-asantest-$build_name: export SINGLE_BIN = asan/$build_name
-asantest-$build_name: asan/$build_name
+asantest_$build_name: export SINGLE_BIN = asan/$build_name
+asantest_$build_name: asan/$build_name
 	scripts/test.sh single $cmd
 
 

@@ -253,12 +253,19 @@ DOTPROG=.
 
 # This is a parallel version of: do_loudly $BUILD $FILES $LINK || exit 1
 
-X="$(ls -1t generated/obj/* 2>/dev/null | tail -n 1)"
+# Create a unique dir for object files based on the compiler and flags.  For
+# example, toybox_asan and asan/sed have the same CFLAGS and can use the same
+# objects, but toybox and toybox_asan don't.
+
+DIR_ID=$(echo "$CC $CFLAGS" | md5sum | cut -d' ' -f1)
+OBJDIR="generated/obj-$DIR_ID"
+
+X="$(ls -1t $OBJDIR/* 2>/dev/null | tail -n 1)"  # newest file
 if [ ! -e "$X" ] || [ ! -z "$(find toys -name "*.h" -newer "$X")" ]
 then
-  rm -rf generated/obj && mkdir -p generated/obj || exit 1
+  rm -rf $OBJDIR && mkdir -p $OBJDIR || exit 1
 else
-  rm -f generated/obj/{main,lib_help}.o || exit 1
+  rm -f $OBJDIR/{main,lib_help}.o || exit 1
 fi
 PENDING=
 LFILES=
@@ -266,11 +273,11 @@ DONE=0
 COUNT=0
 for i in $FILES
 do
-  # build each generated/obj/*.o file in parallel
+  # build each generated/obj-ID/*.o file in parallel
 
   X=${i/lib\//lib_}
   X=${X##*/}
-  OUT="generated/obj/${X%%.c}.o"
+  OUT="$OBJDIR/${X%%.c}.o"
   LFILES="$LFILES $OUT"
   [ "$OUT" -nt "$i" ] && continue
   do_loudly $BUILD -c $i -o $OUT &
