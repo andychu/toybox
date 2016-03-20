@@ -98,7 +98,7 @@ single()
 # Run tests for all commands.
 all()
 {
-  echo ALL $TOYBOX_BIN
+  echo all $TOYBOX_BIN
   if [ -n "$TOYBOX_BIN" ]
   then
     # TODO: Name this with ASAN status?

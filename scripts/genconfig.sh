@@ -168,7 +168,7 @@ print_singlemake()
 $build_name: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh $cmd
 
-asan/$build_name: CC = \$(ASAN_CC)
+asan/$build_name: CC = \$(SAN_CC)
 asan/$build_name: CFLAGS = \$(ASAN_CFLAGS)
 asan/$build_name: export PREFIX = asan/
 asan/$build_name: NOSTRIP = 1
