@@ -127,7 +127,7 @@ all()
     CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
 
-    if [ -h $BIN_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
+    if [ -h $TOYBOX_TREE_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       local old_count=$FAILCOUNT
       cd_test_dir $CMDNAME

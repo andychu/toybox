@@ -6,6 +6,11 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
+# TODO:
+# Have a -host command and -verbose command?  Or use environment variables
+# TEST_HOST
+# VERBOSE=1  VERBOSE=fail
+
 usage() {
   cat <<EOF
 Runs toybox tests, making sure to build the required binaries.
@@ -13,22 +18,23 @@ Runs toybox tests, making sure to build the required binaries.
   ./test.sh all [OPTION]                # Run all tests
   ./test.sh single [OPTION] COMMAND...  # Run tests for the given commands
 
-Flags:
+Options:
  -asan   Run under AddressSanitizer
  -msan   Run under MemorySanitizer
  -ubsan  Run under UndefinedBehaviorSanitizer
- -allsan Run sequentially under the 3 sanitizers
 
 See http://clang.llvm.org/docs/index.html for details on these tools.
 
 You should set CLANG_DIR to the location of pre-built binaries for Clang,
-vailable at http://llvm.org/releases/download.html.  Otherwise it will use
-'clang' in your PATH (which are often old).
+available at http://llvm.org/releases/download.html.  Otherwise it will use
+'clang' in your PATH (which is often old).
 
 Example:
   $ export CLANG_DIR=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04
   $ ./test.sh single -asan grep sed
+
 EOF
+  exit
 }
 
 readonly TOPDIR=${TOPDIR:-$PWD}
@@ -82,8 +88,11 @@ process_flag() {
   esac
 }
 
-# Adapted from genconfig.sh
-toys_grep() {
+# Print the toys that should be installed.
+#
+# NOTE: This logic is copied from scripts/genconfig.sh.  That should probably
+# write a simple text file of commands.
+toys_to_link() {
   grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort
 }
@@ -96,7 +105,7 @@ make_toybox_tree() {
   # Make there aren't old commands lying around.
   rm -rf $tree_dir
   mkdir -p $tree_dir
-  toys_grep | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
+  toys_to_link | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
 }
 
 # TODO: Add timing?  That only prints if it succeeds
@@ -170,4 +179,13 @@ use_lines() {
 # like genconfig.sh
 #   stupid isnewer checks should go away.
 
-"$@"
+[ $# -eq 0 ] && usage
+
+case $1 in
+  single|all)
+    "$@"
+    ;;
+  *)
+    usage
+    ;;
+esac
