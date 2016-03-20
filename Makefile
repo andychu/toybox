@@ -24,10 +24,12 @@ toybox toybox_unstripped: toybox_stuff
 SAN_CC =
 # NOTE: This works but somehow we're not getting symbols in expr.c anymore.
 export ASAN_SYMBOLIZER_PATH =
+export MSAN_SYMBOLIZER_PATH =
 export NOSTRIP
 
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
+	MSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	SAN_CC := $(CLANG_DIR)/bin/clang
 else
 	SAN_CC := clang
