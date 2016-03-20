@@ -57,30 +57,6 @@ setup_test_env()
 # Run tests for specific commands.
 single()
 {
-  # Build individual binaries, e.g. generated/testdir/expr
-
-  # SINGLE_BIN can be set the path of a built binary relative to the repo root.
-  # TODO: This should be the only case?
-  #if [ -n "$SINGLE_BIN" ]
-  #then
-  #  # make a directory and set your PATH to it
-  #  # TODO: Name this with ASAN status?  Or maybe the command.
-  #  # Actually it should look like this:
-  #  # - sed: actual binary
-  #  # - everything besides sed: link to toybox.  So then 'make test_sed' needs
-  #  # a dependency on the 'toybox' binary.
-  #  local tree=generated/single-tree
-  #  rm -rf $tree
-  #  mkdir -p $tree
-  #  ln -s -v $TOPDIR/$SINGLE_BIN $tree
-  #  # Add to the front.  TODO: Don't add it up above.
-  #  #PATH=$TOPDIR/$tree:$PATH
-  #  BIN_DIR=$TOPDIR/$tree
-  #else
-  #  [ -z "$TEST_HOST" ] &&
-  #    PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
-  #fi
-
   setup_test_env
 
   for cmd in "$@"
@@ -98,24 +74,6 @@ single()
 # Run tests for all commands.
 all()
 {
-  #echo all $TOYBOX_BIN
-  #if [ -n "$TOYBOX_BIN" ]
-  #then
-  #  # TODO: Name this with ASAN status?
-  #  local tree=generated/all-tree
-  #  rm -rf $tree
-  #  mkdir -p $tree
-
-	#  PREFIX=$tree scripts/install.sh --symlink --force
-
-  #  # Add to the front.  TODO: Don't add it up above.
-  #  BIN_DIR=$TOPDIR/$tree
-  #  #PATH=$TOPDIR/$tree:$PATH
-  #else
-  #  # Build a toybox binary and create symlinks to it.
-  #  [ -z "$TEST_HOST" ] && make install_flat PREFIX=$BIN_DIR/ || exit 1
-  #fi
-
   setup_test_env
 
   local failed_commands=''
@@ -161,7 +119,6 @@ all()
 }
 
 readonly TEST_ROOT=$TOPDIR/generated/test
-BIN_DIR=$TEST_ROOT/bin  # may be mutated later
 
 rm -rf $TEST_ROOT  # clear out data from old runs
 

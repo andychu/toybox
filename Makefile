@@ -18,11 +18,9 @@ toybox_stuff: $(KCONFIG_CONFIG) *.[ch] lib/*.[ch] toys/*.h toys/*/*.c scripts/*.
 toybox toybox_unstripped: toybox_stuff
 	scripts/make.sh
 
-# .singlemake targets use SAN_CC and ASAN_CFLAGS.
-#
-# Compiler for all sanitizer functions.
 export NOSTRIP
 
+# Compiler for all sanitizer functions.
 SAN_CC =
 ifdef CLANG_DIR
 	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
