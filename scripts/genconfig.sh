@@ -165,8 +165,11 @@ print_singlemake()
 
     # Print a build target and test target for each command.
     cat <<EOF
-$build_name: $cmd_src *.[ch] lib/*.[ch]
-	scripts/single.sh $cmd
+generated/single/$cmd: $cmd_src *.[ch] lib/*.[ch]
+	scripts/single.sh generated/single/$cmd
+
+$build_name: generated/single/$cmd
+	@echo "Built generated/single/$cmd"
 
 $test_name:
 	./test.sh single $cmd
@@ -184,9 +187,6 @@ EOF
 # test_bin builds the 'test' file, not a file named test_bin.  And all the rest
 # of the test targest are phony too.
 .PHONY: test_bin $test_targets
-
-clean::
-	rm -f $working $pending
 
 list:
 	@echo $(echo $working $pending | sort_words)

@@ -141,11 +141,9 @@ single() {
 
     if [ -z "$SAN_FLAG" ]
     then
-      local test_target=
-      [ $cmd = 'test' ] && test_target=test_bin || test_target=$cmd
-      make $test_target
-      # Copy over the symlink!
-      cp --verbose --force $cmd $tree_dir
+      make generated/single/$cmd
+      # Copy the 'single' binary over the symlink to toybox.
+      cp --verbose --force generated/single/$cmd $tree_dir
     fi
 
     TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh single $cmd
