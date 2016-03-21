@@ -163,8 +163,8 @@ print_singlemake()
     # can be built with 'make test_bin'.
     [ "$cmd" == test ] && build_name=test_bin
 
-		# Print a build target and test target for each command.  Make a phony
-		# alias for each build target.
+    # Print a build target and test target for each command.  Make a phony
+    # alias for each build target.
     cat <<EOF
 generated/single/$cmd: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh generated/single/$cmd
