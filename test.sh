@@ -53,6 +53,7 @@ EOF
 #     sed.html
 
 readonly TOPDIR=${TOPDIR:-$PWD}
+readonly CLANG_DIR=${CLANG_DIR:-}
 
 if [ -n "$CLANG_DIR" ]
 then
