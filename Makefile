@@ -14,12 +14,12 @@
 #   toybox_msan
 #   toybox_ubsan
 #   generated/
+#     obj-$MD5SUM        # object files for each combination of CC and CFLAGS,
+#                        # created by scripts/make.sh
 #     single/            # Binaries configured to contain a single command
 #       cat
 #       ls
 #       ...
-#     obj-$MD5SUM        # object files for each combination of CC and CFLAGS,
-#                        # created by scripts/make.sh
 #     tree/
 #       all/             # all commands linked to ../../toybox
 #       all-asan/        # all commands linked to ../../toybox_asan
