@@ -118,7 +118,7 @@ all() {
 
   make $TOYBOX_BIN
 
-  local tree_dir=generated/tree-all$SAN_FLAG
+  local tree_dir=generated/tree/all$SAN_FLAG
   # The symlinks have to go up two levels to the root.
   make_toybox_tree $tree_dir ../../$TOYBOX_BIN
 
@@ -141,13 +141,13 @@ single() {
     local tree_dir
     if [ -z "$SAN_FLAG" ]
     then
-      tree_dir=generated/tree-$cmd
+      tree_dir=generated/tree/$cmd
     else
       # no single binaries
-      tree_dir=generated/tree-all$SAN_FLAG
+      tree_dir=generated/tree/all$SAN_FLAG
     fi
 
-    make_toybox_tree $tree_dir ../../$TOYBOX_BIN
+    make_toybox_tree $tree_dir ../../../$TOYBOX_BIN
 
     # Make the 'single' binary, and copy it over the symlink to toybox in the
     # tree.
