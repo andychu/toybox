@@ -37,23 +37,20 @@ UBSAN_CFLAGS = -fsanitize=undefined -fno-omit-frame-pointer -g
 
 toybox_asan: CC = $(SAN_CC)
 toybox_asan: CFLAGS = $(ASAN_CFLAGS)
-# For stack traces
 toybox_asan: NOSTRIP = 1
-toybox_asan:
+toybox_asan: toybox_stuff
 	scripts/make.sh toybox_asan
 
 toybox_msan: CC = $(SAN_CC)
 toybox_msan: CFLAGS = $(MSAN_CFLAGS)
-# For stack traces
 toybox_msan: NOSTRIP = 1
-toybox_msan:
+toybox_msan: toybox_stuff
 	scripts/make.sh toybox_msan
 
 toybox_ubsan: CC = $(SAN_CC)
 toybox_ubsan: CFLAGS = $(UBSAN_CFLAGS)
-# For stack traces
 toybox_ubsan: NOSTRIP = 1
-toybox_ubsan:
+toybox_ubsan: toybox_stuff
 	scripts/make.sh toybox_ubsan
 
 .PHONY: clean distclean baseline bloatcheck install install_flat \
