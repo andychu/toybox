@@ -151,7 +151,6 @@ print_singlemake()
 {
   local working=
   local pending=
-  local test_targets=
   local phony_targets=
   while IFS=":" read cmd_src cmd
   do

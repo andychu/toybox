@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Run toybox tests.  Assumes that the binaries are built and installed into
-# $TOYBOX_TREE_DIR.  Use ./test.sh
+# Helper script for ./test.sh.  This script assumes that the binaries are built
+# and installed into $TOYBOX_TREE_DIR.
 #
 # Usage:
 #   scripts/test.sh all
@@ -10,13 +10,6 @@
 # Environment variables:
 #   TOYBOX_TREE_DIR: Must be set
 #   TEST_HOST: Test the command on the host instead of toybox
-# 
-# Examples:
-#   $ scripts/test.sh all               # run tests for all commands
-#   $ scripts/test.sh single grep sed   # run tests for these two commands
-# 
-#   # Test 'grep' on the system, not toybox
-#   $ TEST_HOST=1 scripts/test.sh commands grep 
 
 [ -z "$TOPDIR" ] && TOPDIR="$(pwd)"
 

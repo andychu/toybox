@@ -10,6 +10,7 @@ usage() {
   cat <<EOF
 Runs toybox tests, making sure to build the required binaries.
 
+Usage:
   ./test.sh all [OPTION]                # Run all tests
   ./test.sh single [OPTION] COMMAND...  # Run tests for the given commands
 
@@ -34,7 +35,8 @@ Environment variables:
 
 Example:
   $ export CLANG_DIR=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04
-  $ ./test.sh single -asan grep sed
+  $ ./test.sh all                    # Run all tests normally
+  $ ./test.sh single -asan grep sed  # Run grep and sed tests under ASAN
 
 EOF
   exit
