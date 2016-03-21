@@ -53,34 +53,30 @@ then
 	export UBSAN_SYMBOLIZER_PATH=$sym
 fi
 
+die() { echo "$@"; exit 1; }
+
 TOYBOX_BIN=toybox
 SAN_FLAG=  # Are we running under any Sanitizer?
-
-die() { echo "$@"; exit 1; }
 
 process_flag() {
   local flag=$1
 
-  # Common between all three
-  case $flag in
-    -asan|-msan|-ubsan)
-      SAN_FLAG=$flag
-      ;;
-    *)
-      die "Invalid flag $flag"
-      ;;
-  esac
-
   case $flag in
     -asan)
       TOYBOX_BIN=toybox_asan
+      SAN_FLAG=$flag
       ;;
     -msan)
       TOYBOX_BIN=toybox_msan
+      SAN_FLAG=$flag
       ;;
     -ubsan)
       TOYBOX_BIN=toybox_ubsan
+      SAN_FLAG=$flag
       export UBSAN_OPTIONS='print_stacktrace=1'
+      ;;
+    *)
+      die "Invalid flag $flag"
       ;;
   esac
 }
@@ -105,8 +101,6 @@ make_toybox_tree() {
   toys_to_link | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
 }
 
-# TODO: Add timing?  That only prints if it succeeds
-
 all() {
   if [ $# -gt 0 ]
   then
@@ -122,7 +116,7 @@ all() {
 
   local tree_dir=generated/tree/all$SAN_FLAG
   # The symlinks have to go up two levels to the root.
-  make_toybox_tree $tree_dir ../../$TOYBOX_BIN
+  make_toybox_tree $tree_dir ../../../$TOYBOX_BIN
 
   TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh all
 }
@@ -141,13 +135,8 @@ single() {
   for cmd in "$@"
   do
     local tree_dir
-    if [ -z "$SAN_FLAG" ]
-    then
-      tree_dir=generated/tree/$cmd
-    else
-      # no single binaries
-      tree_dir=generated/tree/all$SAN_FLAG
-    fi
+    [ -z "$SAN_FLAG" ] && 
+      tree_dir=generated/tree/$cmd || tree_dir=generated/tree/all$SAN_FLAG
 
     make_toybox_tree $tree_dir ../../../$TOYBOX_BIN
 
@@ -156,32 +145,12 @@ single() {
     if [ -z "$SAN_FLAG" ]
     then
       make generated/single/$cmd
-      cp --verbose --force generated/single/$cmd $tree_dir
+      cp -v -f generated/single/$cmd $tree_dir
     fi
 
     TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh single $cmd
   done
 }
-
-# Adapted from make.sh.  Doesn't work because we get '-toysh' for some reason
-toys_sed() {
-  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c \
-	| sed -e 's/\(.*TOY(\)\([^,]*\),\(.*\)/\2/' | sort
-}
-
-use_lines() {
-  sed -n -e 's/^USE_[A-Z0-9_]*(/&/p' toys/*/*.c 
-}
-
-# Flow
-# CODE scripts/install.sh -> 
-# DATA generated/instlist ->
-# CODE which is built with $HOST_CC
-# DATA scripts/install.c, which includes
-# DATA generated/newtoys.h
-# which is built by scripts/make.sh -- this uses sed on toys/*/*.c.  Kind of
-# like genconfig.sh
-#   stupid isnewer checks should go away.
 
 [ $# -eq 0 ] && usage
 
