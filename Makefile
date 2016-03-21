@@ -5,6 +5,28 @@
 # Note that CC defaults to "cc" so the one in configure doesn't get
 # used when scripts/make.sh and care called through "make".
 
+# Build tree layout:
+#
+# git/toybox/
+#   toybox               # stripped binary
+#   toybox_unstripped
+#   toybox_asan          # Binaries with runtime instrumentation
+#   toybox_msan
+#   toybox_ubsan
+#   generated/
+#     single/            # Binaries configured to contain a single command
+#       cat
+#       ls
+#       ...
+#     obj-$MD5SUM        # object files, created by scripts/make.sh
+#     tree-all/          # all commands are links to ../../toybox
+#     tree-cat/ ...      # like tree-all/, except cat is a real binary
+#     tree-all-asan/     # all commands are links to ../../toybox_asan
+#     tree-all-msan/
+#     tree-all-ubsan/
+#
+# See ./test.sh for instructions on running these binaries.
+
 HOSTCC?=cc
 
 export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V NOSTRIP
