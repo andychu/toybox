@@ -97,8 +97,9 @@ process_flag() {
 
 # Print the toys that should be installed.
 #
-# NOTE: This logic is copied from scripts/genconfig.sh.  That should probably
-# write a simple text file of commands.
+# TODO: This is a variant of logic in scripts/genconfig.sh, which has another
+# variant in scripts/make.sh.  scripts/genconfig.sh should probably also a
+# simple text file of commands that everyone can use.
 toys_to_link() {
   grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort

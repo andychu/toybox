@@ -309,7 +309,7 @@ done
 [ $DONE -ne 0 ] && exit 1
 
 do_loudly $BUILD $LFILES $LINK || exit 1
-if [ -z "$NOSTRIP" ] 
+if [ -z "$NOSTRIP" ]
 then
   if ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
   then
