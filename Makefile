@@ -117,7 +117,7 @@ distclean: clean
 test: tests
 
 tests:
-	scripts/test.sh all
+	./test.sh all
 
 help::
 	@echo  '  toybox          - Build toybox.'
