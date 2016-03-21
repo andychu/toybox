@@ -41,6 +41,16 @@ Example:
 EOF
   exit
 }
+# TODO:
+# ./test.sh cov      # run all tests and output coverage
+# ./test.sh cov cat  # coverage for cat only
+# ./test.sh all -cov
+# ./test.sh single -cov sed
+#
+# Where does the output go?
+#   coverage/
+#     ALL.html
+#     sed.html
 
 readonly TOPDIR=${TOPDIR:-$PWD}
 
