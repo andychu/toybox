@@ -71,8 +71,7 @@ SAN_FLAG=  # Are we running under any Sanitizer?
 # Set globals if the arg looks like a flag.
 process_flag() {
   local flag=$1
-
-  ret=0
+  local ret=0
   case $flag in
     -asan)
       TOYBOX_BIN=toybox_asan
@@ -121,20 +120,15 @@ all() {
   then
     process_flag $1 && shift  # set globals if it's a flag
   fi
-
   make $TOYBOX_BIN
-
   local tree_dir=generated/tree/all$SAN_FLAG
-  # The symlinks have to go up two levels to the root.
-  make_toybox_tree $tree_dir ../../../$TOYBOX_BIN
-
+  make_toybox_tree $tree_dir ../../../$TOYBOX_BIN  # 3 levels up
   TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh all
 }
 
 single() {
   [ $# -eq 0 ] && die "At least one command is required."
   process_flag $1 && shift  # set globals if it's a flag
-
   make $TOYBOX_BIN
 
   for cmd in "$@"
@@ -152,7 +146,6 @@ single() {
       make generated/single/$cmd
       cp -v -f generated/single/$cmd $tree_dir
     fi
-
     TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh single $cmd
   done
 }
