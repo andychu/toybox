@@ -6,11 +6,6 @@ set -o nounset
 set -o pipefail
 set -o errexit
 
-# TODO:
-# Have a -host command and -verbose command?  Or use environment variables
-# TEST_HOST
-# VERBOSE=1  VERBOSE=fail
-
 usage() {
   cat <<EOF
 Runs toybox tests, making sure to build the required binaries.
@@ -25,9 +20,17 @@ Options:
 
 See http://clang.llvm.org/docs/index.html for details on these tools.
 
-You should set CLANG_DIR to the location of pre-built binaries for Clang,
-available at http://llvm.org/releases/download.html.  Otherwise it will use
-'clang' in your PATH (which is often old).
+Environment variables:
+  TEST_HOST:
+    Test the command on the host instead of toybox.  Respected by
+    scripts/test.sh.
+  VERBOSE=1, VERBOSE=fail, DEBUG:
+    Show more test output.  Respected by scripts/runtest.sh.
+  CLANG_DIR:
+    Directory of Clang pre-built binaries, available at
+    http://llvm.org/releases/download.html.  You should set CLANG_DIR when
+    running with the sanitizers; otherwise it will use 'clang' in your PATH
+    (which is often old).
 
 Example:
   $ export CLANG_DIR=~/install/clang+llvm-3.8.0-x86_64-linux-gnu-ubuntu-14.04
