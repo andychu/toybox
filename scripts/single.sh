@@ -3,13 +3,10 @@
 # Build standalone toybox commands.
 #
 # Usage:
-#   scripts/single.sh COMMAND...
-#
-# The output is put in the repo root, or $PREFIX.
+#   scripts/single.sh COMMAND_PATH...
 #
 # Example:
-#   # Put grep and sed binaries in this dir
-#   $ PREFIX=generated/test/bin scripts/single.sh grep sed
+#   $ scripts/single.sh generated/single/grep generated/single/sed
 
 if [ $# -eq 0 ]
 then
@@ -31,27 +28,28 @@ fi
 # 3) make toybox, and then move it to the command name.
 
 export KCONFIG_CONFIG=.singleconfig
-for i in "$@"
+for out_path in "$@"
 do
-  echo -n "$i:"
-  TOYFILE="$(egrep -l "TOY[(]($i)[ ,]" toys/*/*.c)"
+  cmd=$(basename $out_path)
+  echo -n "$cmd:"
+  TOYFILE="$(egrep -l "TOY[(]($cmd)[ ,]" toys/*/*.c)"
 
   if [ -z "$TOYFILE" ]
   then
-    echo "Unknown command '$i'" >&2
+    echo "Unknown command '$cmd'" >&2
     exit 1
   fi
 
   # Enable stuff this command depends on
-  DEPENDS="$(sed -n "/^config *$i"'$/,/^$/{s/^[ \t]*depends on //;T;s/[!][A-Z0-9_]*//g;s/ *&& */|/g;p}' $TOYFILE | xargs | tr ' ' '|')"
+  DEPENDS="$(sed -n "/^config *$cmd"'$/,/^$/{s/^[ \t]*depends on //;T;s/[!][A-Z0-9_]*//g;s/ *&& */|/g;p}' $TOYFILE | xargs | tr ' ' '|')"
 
-  NAME=$(echo $i | tr a-z- A-Z_)
+  NAME=$(echo $cmd | tr a-z- A-Z_)
   make allnoconfig > /dev/null &&
   sed -ri -e '/CONFIG_TOYBOX/d' \
     -e "s/# (CONFIG_($NAME|${NAME}_.*${DEPENDS:+|$DEPENDS})) is not set/\1=y/" \
     "$KCONFIG_CONFIG" &&
   echo "# CONFIG_TOYBOX is not set" >> "$KCONFIG_CONFIG" &&
   grep "CONFIG_TOYBOX_" .config >> "$KCONFIG_CONFIG" &&
-
-  scripts/make.sh $PREFIX$i || exit 1
+  mkdir -p $(dirname $out_path) &&
+  scripts/make.sh $out_path || exit 1
 done

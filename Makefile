@@ -5,9 +5,35 @@
 # Note that CC defaults to "cc" so the one in configure doesn't get
 # used when scripts/make.sh and care called through "make".
 
+# Build tree layout:
+#
+# git/toybox/
+#   toybox               # stripped binary
+#   toybox_unstripped
+#   toybox_asan          # Binaries with runtime instrumentation
+#   toybox_msan
+#   toybox_ubsan
+#   generated/
+#     obj-$MD5SUM        # object files for each combination of CC and CFLAGS
+#                        # (created by scripts/make.sh)
+#     single/            # Binaries configured to contain a single command
+#       cat              # (created by scripts/single.sh)
+#       ls
+#       ...
+#     tree/
+#       all/             # all commands linked to ../../toybox
+#       all-asan/        # all commands linked to ../../toybox_asan
+#       all-msan/
+#       all-ubsan/
+#       cat/             # like tree/all/, except cat is a real binary
+#       ls/
+#       ...
+#
+# See ./test.sh for instructions on running these binaries.
+
 HOSTCC?=cc
 
-export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V
+export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V NOSTRIP
 
 all: toybox
 
@@ -18,9 +44,38 @@ toybox_stuff: $(KCONFIG_CONFIG) *.[ch] lib/*.[ch] toys/*.h toys/*/*.c scripts/*.
 toybox toybox_unstripped: toybox_stuff
 	scripts/make.sh
 
+# CLANG_DIR should be set to build and run tests under sanitizers.
+SAN_CC =
+ifdef CLANG_DIR
+	SAN_CC = $(CLANG_DIR)/bin/clang
+else
+	SAN_CC = clang
+endif
+
+# Binaries built with Clang sanitizers.  All of these should be unstripped
+# because they show stack traces at runtime.
+toybox_asan: CC = $(SAN_CC)
+toybox_asan: CFLAGS = -fsanitize=address -g
+toybox_asan: NOSTRIP = 1
+toybox_asan: toybox_stuff
+	scripts/make.sh toybox_asan
+
+toybox_msan: CC = $(SAN_CC)
+toybox_msan: CFLAGS = -fsanitize=memory -g
+toybox_msan: NOSTRIP = 1
+toybox_msan: toybox_stuff
+	scripts/make.sh toybox_msan
+
+toybox_ubsan: CC = $(SAN_CC)
+toybox_ubsan: CFLAGS = -fsanitize=undefined -fno-omit-frame-pointer -g
+toybox_ubsan: NOSTRIP = 1
+toybox_ubsan: toybox_stuff
+	scripts/make.sh toybox_ubsan
+
 .PHONY: clean distclean baseline bloatcheck install install_flat \
 	uinstall uninstall_flat test tests help toybox_stuff change \
 	list list_working list_pending
+
 
 include kconfig/Makefile
 -include .singlemake
@@ -53,7 +108,8 @@ change:
 	scripts/change.sh
 
 clean::
-	rm -rf toybox toybox_unstripped generated change .singleconfig*
+	rm -rf toybox toybox_unstripped toybox_asan toybox_msan toybox_ubsan \
+		generated change .singleconfig*
 
 distclean: clean
 	rm -f toybox_old .config* .singlemake
@@ -61,7 +117,7 @@ distclean: clean
 test: tests
 
 tests:
-	scripts/test.sh all
+	./test.sh all
 
 help::
 	@echo  '  toybox          - Build toybox.'

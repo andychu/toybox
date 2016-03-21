@@ -151,7 +151,7 @@ print_singlemake()
 {
   local working=
   local pending=
-  local test_targets=
+  local phony_targets=
   while IFS=":" read cmd_src cmd
   do
     [ "$cmd" == help ] && continue
@@ -163,30 +163,31 @@ print_singlemake()
     # can be built with 'make test_bin'.
     [ "$cmd" == test ] && build_name=test_bin
 
-    # Print a build target and test target for each command.
+    # Print a build target and test target for each command.  Make a phony
+    # alias for each build target.
     cat <<EOF
-$build_name: $cmd_src *.[ch] lib/*.[ch]
-	scripts/single.sh $cmd
+generated/single/$cmd: $cmd_src *.[ch] lib/*.[ch]
+	scripts/single.sh generated/single/$cmd
+
+$build_name: generated/single/$cmd
+	@echo "Built generated/single/$cmd"
 
 $test_name:
-	scripts/test.sh single $cmd
+	./test.sh single $cmd
 
 EOF
 
     [ "${cmd_src/pending//}" != "$cmd_src" ] &&
       pending="$pending $cmd" ||
       working="$working $cmd"
-      test_targets="$test_targets $test_name"
+      phony_targets="$phony_targets $build_name $test_name"
   done
 
   # Print more targets.
   cat <<EOF
 # test_bin builds the 'test' file, not a file named test_bin.  And all the rest
 # of the test targest are phony too.
-.PHONY: test_bin $test_targets
-
-clean::
-	rm -f $working $pending
+.PHONY: $phony_targets
 
 list:
 	@echo $(echo $working $pending | sort_words)

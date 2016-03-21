@@ -10,7 +10,8 @@ export LC_ALL=C
 set -o pipefail
 source ./configure
 
-# output ${OUTNAME}_unstripped and and $OUTNAME
+# Output ${OUTNAME}_unstripped and $OUTNAME, or just $OUTNAME if NOSTRIP is
+# set.
 OUTNAME=${1:-toybox}
 
 [ -z "$KCONFIG_CONFIG" ] && KCONFIG_CONFIG=".config"
@@ -31,7 +32,7 @@ do_loudly()
 # Is anything under directory $2 newer than file $1
 isnewer()
 {
- [ ! -z "$(find "$2" -newer "$1" 2>/dev/null || echo yes)" ]
+  [ ! -z "$(find "$2" -newer "$1" 2>/dev/null || echo yes)" ]
 }
 
 echo "Generate headers from toys/*/*.c..."
@@ -117,7 +118,9 @@ fi
 
 # LINK needs optlibs.dat, above
 
-LINK="$(echo $LDOPTIMIZE $LDFLAGS -o ${OUTNAME}_unstripped -Wl,--as-needed $(cat generated/optlibs.dat))"
+[ -z "$NOSTRIP" ] && LINKOUT=${OUTNAME}_unstripped || LINKOUT=$OUTNAME
+
+LINK="$(echo $LDOPTIMIZE $LDFLAGS -o ${LINKOUT}  -Wl,--as-needed $(cat generated/optlibs.dat))"
 genbuildsh > generated/build.sh && chmod +x generated/build.sh || exit 1
 
 echo "Make generated/config.h from $KCONFIG_CONFIG."
@@ -250,12 +253,19 @@ DOTPROG=.
 
 # This is a parallel version of: do_loudly $BUILD $FILES $LINK || exit 1
 
-X="$(ls -1t generated/obj/* 2>/dev/null | tail -n 1)"
+# Create a unique dir for object files based on the compiler and flags.  For
+# example, toybox and generated/single/sed have the same CFLAGS and can use the
+# same objects, but toybox and toybox_asan don't.
+
+DIR_ID=$(echo "$CC $CFLAGS" | md5sum | cut -d' ' -f1)
+OBJDIR="generated/obj-$DIR_ID"
+
+X="$(ls -1t $OBJDIR/* 2>/dev/null | tail -n 1)"  # newest file
 if [ ! -e "$X" ] || [ ! -z "$(find toys -name "*.h" -newer "$X")" ]
 then
-  rm -rf generated/obj && mkdir -p generated/obj || exit 1
+  rm -rf $OBJDIR && mkdir -p $OBJDIR || exit 1
 else
-  rm -f generated/obj/{main,lib_help}.o || exit 1
+  rm -f $OBJDIR/{main,lib_help}.o || exit 1
 fi
 PENDING=
 LFILES=
@@ -263,11 +273,11 @@ DONE=0
 COUNT=0
 for i in $FILES
 do
-  # build each generated/obj/*.o file in parallel
+  # build each generated/obj-ID/*.o file in parallel
 
   X=${i/lib\//lib_}
   X=${X##*/}
-  OUT="generated/obj/${X%%.c}.o"
+  OUT="$OBJDIR/${X%%.c}.o"
   LFILES="$LFILES $OUT"
   [ "$OUT" -nt "$i" ] && continue
   do_loudly $BUILD -c $i -o $OUT &
@@ -299,10 +309,13 @@ done
 [ $DONE -ne 0 ] && exit 1
 
 do_loudly $BUILD $LFILES $LINK || exit 1
-if [ ! -z "$NOSTRIP" ] || ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
+if [ -z "$NOSTRIP" ]
 then
-  echo "strip failed, using unstripped" && cp ${OUTNAME}_unstripped $OUTNAME ||
-  exit 1
+  if ! do_loudly ${CROSS_COMPILE}strip ${OUTNAME}_unstripped -o $OUTNAME
+  then
+    echo "strip failed, using unstripped"
+    cp ${OUTNAME}_unstripped $OUTNAME || exit 1
+  fi
 fi
 
 # gcc 4.4's strip command is buggy, and doesn't set the executable bit on

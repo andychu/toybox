@@ -1,22 +1,15 @@
 #!/bin/bash
 #
-# Run toybox tests.
-
-usage()
-{
-  cat <<EOF
-Usage:
-  scripts/test.sh all
-  scripts/test.sh single COMMAND...
-
-Examples:
-  $ scripts/test.sh all               # run tests for all commands
-  $ scripts/test.sh single grep sed   # run tests for these two commands
-
-  # Test 'grep' on the system, not toybox
-  $ TEST_HOST=1 scripts/test.sh commands grep 
-EOF
-}
+# Helper script for ./test.sh.  This script assumes that the binaries are built
+# and installed into $TOYBOX_TREE_DIR.
+#
+# Usage:
+#   scripts/test.sh all
+#   scripts/test.sh single COMMAND...
+#
+# Environment variables:
+#   TOYBOX_TREE_DIR: Must be set
+#   TEST_HOST: Test the command on the host instead of toybox
 
 [ -z "$TOPDIR" ] && TOPDIR="$(pwd)"
 
@@ -42,7 +35,8 @@ setup_test_env()
   HOST_BIN_DATE=$(which date)
   HOST_BIN_HOSTNAME=$(which hostname)
 
-  PATH="$BIN_DIR:$PATH"  # Make sure the tests can use toybox tools
+  # The tests should find toybox tools in their PATH first.
+  [ -z "$TEST_HOST" ] && PATH="$TOYBOX_TREE_DIR:$PATH"
   export LC_COLLATE=C
 
   # Library functions used by .test scripts, e.g. 'testing'.
@@ -57,9 +51,6 @@ setup_test_env()
 # Run tests for specific commands.
 single()
 {
-  # Build individual binaries, e.g. generated/testdir/expr
-  [ -z "$TEST_HOST" ] && PREFIX=$BIN_DIR/ scripts/single.sh "$@" || exit 1
-
   setup_test_env
 
   for cmd in "$@"
@@ -77,9 +68,6 @@ single()
 # Run tests for all commands.
 all()
 {
-  # Build a toybox binary and create symlinks to it.
-  [ -z "$TEST_HOST" ] && make install_flat PREFIX=$BIN_DIR/ || exit 1
-
   setup_test_env
 
   local failed_commands=''
@@ -91,7 +79,7 @@ all()
     CMDNAME="${test_file##*/}"
     CMDNAME="${CMDNAME%.test}"
 
-    if [ -h $BIN_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
+    if [ -h $TOYBOX_TREE_DIR/$CMDNAME ] || [ -n "$TEST_HOST" ]
     then
       local old_count=$FAILCOUNT
       cd_test_dir $CMDNAME
@@ -125,10 +113,8 @@ all()
 }
 
 readonly TEST_ROOT=$TOPDIR/generated/test
-readonly BIN_DIR=$TEST_ROOT/bin
 
 rm -rf $TEST_ROOT  # clear out data from old runs
-mkdir -p $BIN_DIR
 
 case $1 in
   single|all)
