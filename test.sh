@@ -46,9 +46,6 @@ then
 	export ASAN_SYMBOLIZER_PATH=$sym
 	export MSAN_SYMBOLIZER_PATH=$sym
 	export UBSAN_SYMBOLIZER_PATH=$sym
-	SAN_CC=$CLANG_DIR/bin/clang
-else
-	SAN_CC=clang
 fi
 
 TOYBOX_BIN=toybox

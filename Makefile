@@ -18,36 +18,30 @@ toybox_stuff: $(KCONFIG_CONFIG) *.[ch] lib/*.[ch] toys/*.h toys/*/*.c scripts/*.
 toybox toybox_unstripped: toybox_stuff
 	scripts/make.sh
 
-
-# Compiler for all sanitizer functions.
+# CLANG_DIR should be set to build and run tests under sanitizers.
 SAN_CC =
 ifdef CLANG_DIR
-	ASAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
-	MSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
-	UBSAN_SYMBOLIZER_PATH := $(CLANG_DIR)/bin/llvm-symbolizer
 	SAN_CC := $(CLANG_DIR)/bin/clang
 else
 	SAN_CC := clang
 endif
 
-ASAN_CFLAGS = -fsanitize=address -g
-MSAN_CFLAGS = -fsanitize=memory -g
-UBSAN_CFLAGS = -fsanitize=undefined -fno-omit-frame-pointer -g
-
+# Binaries built with Clang sanitizers.  All of these should be unstripped
+# because they show stack traces at runtime.
 toybox_asan: CC = $(SAN_CC)
-toybox_asan: CFLAGS = $(ASAN_CFLAGS)
+toybox_asan: CFLAGS = -fsanitize=address -g
 toybox_asan: NOSTRIP = 1
 toybox_asan: toybox_stuff
 	scripts/make.sh toybox_asan
 
 toybox_msan: CC = $(SAN_CC)
-toybox_msan: CFLAGS = $(MSAN_CFLAGS)
+toybox_msan: CFLAGS = -fsanitize=memory -g
 toybox_msan: NOSTRIP = 1
 toybox_msan: toybox_stuff
 	scripts/make.sh toybox_msan
 
 toybox_ubsan: CC = $(SAN_CC)
-toybox_ubsan: CFLAGS = $(UBSAN_CFLAGS)
+toybox_ubsan: CFLAGS = -fsanitize=undefined -fno-omit-frame-pointer -g
 toybox_ubsan: NOSTRIP = 1
 toybox_ubsan: toybox_stuff
 	scripts/make.sh toybox_ubsan

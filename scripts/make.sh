@@ -254,8 +254,8 @@ DOTPROG=.
 # This is a parallel version of: do_loudly $BUILD $FILES $LINK || exit 1
 
 # Create a unique dir for object files based on the compiler and flags.  For
-# example, toybox_asan and asan/sed have the same CFLAGS and can use the same
-# objects, but toybox and toybox_asan don't.
+# example, toybox and generated/single/sed have the same CFLAGS and can use the
+# same objects, but toybox and toybox_asan don't.
 
 DIR_ID=$(echo "$CC $CFLAGS" | md5sum | cut -d' ' -f1)
 OBJDIR="generated/obj-$DIR_ID"
