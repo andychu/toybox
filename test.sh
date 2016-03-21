@@ -68,9 +68,11 @@ die() { echo "$@"; exit 1; }
 TOYBOX_BIN=toybox
 SAN_FLAG=  # Are we running under any Sanitizer?
 
+# Set globals if the arg looks like a flag.
 process_flag() {
   local flag=$1
 
+  ret=0
   case $flag in
     -asan)
       TOYBOX_BIN=toybox_asan
@@ -85,10 +87,13 @@ process_flag() {
       SAN_FLAG=$flag
       export UBSAN_OPTIONS='print_stacktrace=1'
       ;;
-    *)
+    -*)
       die "Invalid flag $flag"
       ;;
+    *)
+      ret=1  # doesn't look like a flag
   esac
+  return $ret
 }
 
 # Print the toys that should be installed.
@@ -114,12 +119,7 @@ make_toybox_tree() {
 all() {
   if [ $# -gt 0 ]
   then
-    case $1 in 
-      -*)
-        process_flag $1
-        shift
-        ;;
-    esac
+    process_flag $1 && shift  # set globals if it's a flag
   fi
 
   make $TOYBOX_BIN
@@ -133,12 +133,7 @@ all() {
 
 single() {
   [ $# -eq 0 ] && die "At least one command is required."
-  case $1 in 
-    -*)
-      process_flag $1
-      shift
-      ;;
-  esac
+  process_flag $1 && shift  # set globals if it's a flag
 
   make $TOYBOX_BIN
 
