@@ -18,12 +18,13 @@
 #       cat
 #       ls
 #       ...
-#     obj-$MD5SUM        # object files, created by scripts/make.sh
-#     tree-all/          # all commands are links to ../../toybox
-#     tree-cat/ ...      # like tree-all/, except cat is a real binary
-#     tree-all-asan/     # all commands are links to ../../toybox_asan
+#     obj-$MD5SUM        # object files for each combination of CC and CFLAGS,
+#                        # created by scripts/make.sh
+#     tree-all/          # all commands linked to ../../toybox
+#     tree-all-asan/     # all commands linked to ../../toybox_asan
 #     tree-all-msan/
 #     tree-all-ubsan/
+#     tree-cat/ ...      # like tree-all/, except cat is a real binary
 #
 # See ./test.sh for instructions on running these binaries.
 

@@ -135,14 +135,22 @@ single() {
 
   for cmd in "$@"
   do
-    # e.g. generated/tree-grep or generated/tree-grep-asan
-    local tree_dir=generated/tree-$cmd$SAN_FLAG
+    local tree_dir
+    if [ -z "$SAN_FLAG" ]
+    then
+      tree_dir=generated/tree-$cmd
+    else
+      # no single binaries
+      tree_dir=generated/tree-all$SAN_FLAG
+    fi
+
     make_toybox_tree $tree_dir ../../$TOYBOX_BIN
 
+    # Make the 'single' binary, and copy it over the symlink to toybox in the
+    # tree.
     if [ -z "$SAN_FLAG" ]
     then
       make generated/single/$cmd
-      # Copy the 'single' binary over the symlink to toybox.
       cp --verbose --force generated/single/$cmd $tree_dir
     fi
 
