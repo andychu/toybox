@@ -41,16 +41,6 @@ Example:
 EOF
   exit
 }
-# TODO:
-# ./test.sh cov      # run all tests and output coverage
-# ./test.sh cov cat  # coverage for cat only
-# ./test.sh all -cov
-# ./test.sh single -cov sed
-#
-# Where does the output go?
-#   coverage/
-#     ALL.html
-#     sed.html
 
 readonly TOPDIR=${TOPDIR:-$PWD}
 readonly CLANG_DIR=${CLANG_DIR:-}
@@ -70,7 +60,8 @@ TOYBOX_BIN=toybox
 SAN_FLAG=  # Are we running under any Sanitizer?
 
 # Set globals if the arg looks like a flag.
-process_flag() {
+process_flag()
+{
   local flag=$1
   local ret=0
   case $flag in
@@ -96,18 +87,20 @@ process_flag() {
   return $ret
 }
 
-# Print the toys that should be installed.
+# Print the toys that should be in the test environment.
 #
 # TODO: This is a variant of logic in scripts/genconfig.sh, which has another
-# variant in scripts/make.sh.  scripts/genconfig.sh should probably also a
+# variant in scripts/make.sh.  scripts/genconfig.sh should probably ouput a
 # simple text file of commands that everyone can use.
-toys_to_link() {
+toys_to_link()
+{
   grep 'TOY(.*)' toys/*/*.c | grep -v TOYFLAG_NOFORK | grep -v "0))" | \
     sed -rn 's/([^:]*):.*(OLD|NEW)TOY\( *([a-zA-Z][^,]*) *,.*/\3/p' | sort
 }
 
 # Make a dir, linking every binary to the toybox binary.
-make_toybox_tree() {
+make_toybox_tree()
+{
   local tree_dir=$1
   local toybox_bin=$2
 
@@ -117,7 +110,8 @@ make_toybox_tree() {
   toys_to_link | xargs -I {} -- ln -s $toybox_bin $tree_dir/{}
 }
 
-all() {
+all()
+{
   if [ $# -gt 0 ]
   then
     process_flag $1 && shift  # set globals if it's a flag
@@ -128,7 +122,8 @@ all() {
   TOYBOX_TREE_DIR=$TOPDIR/$tree_dir scripts/test.sh all
 }
 
-single() {
+single()
+{
   [ $# -eq 0 ] && die "At least one command is required."
   process_flag $1 && shift  # set globals if it's a flag
   make $TOYBOX_BIN
