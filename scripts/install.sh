@@ -8,8 +8,6 @@ source ./configure
 
 [ -z "$PREFIX" ] && PREFIX="."
 
-TOYBOX_BIN=${TOYBOX_BIN:-toybox}  # allow linking to toybox_asan, etc.
-
 LONG_PATH=""
 while [ ! -z "$1" ]
 do
@@ -47,9 +45,9 @@ echo "Install commands..."
 if [ -z "$UNINSTALL" ]
 then
   mkdir -p ${PREFIX}/${LONG_PATH} || exit 1
-  cp $TOYBOX_BIN ${PREFIX}/${LONG_PATH} || exit 1
+  cp toybox ${PREFIX}/${LONG_PATH} || exit 1
 else
-  rm "${PREFIX}/${LONG_PATH}/${TOYBOX_BIN}" 2>/dev/null
+  rm "${PREFIX}/${LONG_PATH}/toybox" 2>/dev/null
   rmdir "${PREFIX}/${LONG_PATH}" 2>/dev/null
 fi
 cd "${PREFIX}"
@@ -89,6 +87,6 @@ do
 
   # Create link
   [ -z "$UNINSTALL" ] &&
-    ln $DO_FORCE $LINK_TYPE ${DOTPATH}${TOYBOX_BIN} $i ||
+    ln $DO_FORCE $LINK_TYPE ${DOTPATH}toybox $i ||
     rm $i 2>/dev/null
 done
