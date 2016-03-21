@@ -169,7 +169,7 @@ $build_name: $cmd_src *.[ch] lib/*.[ch]
 	scripts/single.sh $cmd
 
 $test_name:
-	scripts/test.sh single $cmd
+	./test.sh single $cmd
 
 EOF
 

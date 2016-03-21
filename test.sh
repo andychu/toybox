@@ -139,10 +139,11 @@ single() {
     local tree_dir=generated/tree-$cmd$SAN_FLAG
     make_toybox_tree $tree_dir ../../$TOYBOX_BIN
 
-    # TODO: change to generated/single/$cmd
     if [ -z "$SAN_FLAG" ]
     then
-      make $cmd
+      local test_target=
+      [ $cmd = 'test' ] && test_target=test_bin || test_target=$cmd
+      make $test_target
       # Copy over the symlink!
       cp --verbose --force $cmd $tree_dir
     fi

@@ -21,9 +21,9 @@ toybox toybox_unstripped: toybox_stuff
 # CLANG_DIR should be set to build and run tests under sanitizers.
 SAN_CC =
 ifdef CLANG_DIR
-	SAN_CC := $(CLANG_DIR)/bin/clang
+	SAN_CC = $(CLANG_DIR)/bin/clang
 else
-	SAN_CC := clang
+	SAN_CC = clang
 endif
 
 # Binaries built with Clang sanitizers.  All of these should be unstripped
