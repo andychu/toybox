@@ -7,7 +7,7 @@
 
 HOSTCC?=cc
 
-export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V
+export CROSS_COMPILE CFLAGS OPTIMIZE LDOPTIMIZE CC HOSTCC V NOSTRIP
 
 all: toybox
 
@@ -18,7 +18,6 @@ toybox_stuff: $(KCONFIG_CONFIG) *.[ch] lib/*.[ch] toys/*.h toys/*/*.c scripts/*.
 toybox toybox_unstripped: toybox_stuff
 	scripts/make.sh
 
-export NOSTRIP
 
 # Compiler for all sanitizer functions.
 SAN_CC =
