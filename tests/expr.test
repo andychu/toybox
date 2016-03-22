@@ -60,3 +60,6 @@ testing "missing outer )" "expr \( 1 + \( 2 \* 3 \) 2>/dev/null; echo \$?" \
 testing "bad operator" "expr 1 @ 2 2>/dev/null; echo \$?" "2\n" "" ""
 testing "adjacent literals" "expr 1 2 2>/dev/null; echo \$?" "2\n" "" ""
 testing "non-integer argument" "expr 1 + a 2>/dev/null; echo \$?" "2\n" "" ""
+
+# Case that triggers ASAN error
+testing "regex" "expr 3 : '\(.\)' = 4 : '\(.\)'" "0\n" "" ""
