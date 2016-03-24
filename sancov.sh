@@ -66,6 +66,10 @@ cpp-main() {
 # In the case of a memory sanitizer error, I thik it might exit immediately.
 # So it's a side effect.
 
+# Bug is that toybox always calls _exit() instead of exit(), in xexit
+#
+# Fix is just to call exit().  Could add an #ifdef I guess.
+
 c-main() {
 
   rm -f *.sancov
