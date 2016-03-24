@@ -24,6 +24,9 @@ EOF
 c-src() {
 cat > _tmp/cov.c <<EOF
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>  // _exit
+
 __attribute__((noinline))
 void foo() { printf("foo\n"); }
 
@@ -31,6 +34,7 @@ int main(int argc, char **argv) {
   if (argc == 2)
     foo();
   printf("main\n");
+  _exit(0);  // NO COVERAGE
 }
 EOF
 }
@@ -44,7 +48,8 @@ build() {
 }
 
 run() {
-  ASAN_OPTIONS=coverage=1 ./a.out; ls -l *sancov
+  ASAN_OPTIONS=coverage=1 ./a.out
+  ls -l *sancov
 }
 
 cpp-main() {
@@ -54,6 +59,12 @@ cpp-main() {
   build 
   run
 }
+
+# PROBLEM: Does toybox do some kind of early exit?  Try a bigger C program?
+# Or put a breakpoint where it exits?  Maybe it if doesn't reach the end of
+# main?
+# In the case of a memory sanitizer error, I thik it might exit immediately.
+# So it's a side effect.
 
 c-main() {
 
