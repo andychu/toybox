@@ -72,6 +72,18 @@ toybox_ubsan: NOSTRIP = 1
 toybox_ubsan: toybox_stuff
 	scripts/make.sh toybox_ubsan
 
+# NOTES:
+# - Coverage works on top of top of sanitizers.  Just pick one I guess.
+# - There are different types of coverage, e.g. -fsanitize-coverage = func, bb
+#   or edge.  Picking one for now.
+# - For some reason .sancov files are only written when there are sanitizer
+#   errors?  e.g. with cat under -msan.  I want total test coverage.
+toybox_sancov_func: CC = $(SAN_CC)
+toybox_sancov_func: CFLAGS = -fsanitize=memory -g -fsanitize-coverage=func
+toybox_sancov_func: NOSTRIP = 1
+toybox_sancov_func: toybox_stuff
+	scripts/make.sh toybox_sancov_func
+
 .PHONY: clean distclean baseline bloatcheck install install_flat \
 	uinstall uninstall_flat test tests help toybox_stuff change \
 	list list_working list_pending

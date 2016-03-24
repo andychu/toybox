@@ -18,6 +18,7 @@ Options:
  -asan   Run under AddressSanitizer
  -msan   Run under MemorySanitizer
  -ubsan  Run under UndefinedBehaviorSanitizer
+ -sancov Run under SanitizerCoverage
 
 See http://clang.llvm.org/docs/index.html for details on these tools.
 
@@ -77,6 +78,16 @@ process_flag()
       TOYBOX_BIN=toybox_ubsan
       SAN_FLAG=$flag
       export UBSAN_OPTIONS='print_stacktrace=1'
+      ;;
+    -sancov)
+      TOYBOX_BIN=toybox_sancov_func
+      SAN_FLAG=$flag
+
+      local cov_dir=/tmp/sancov
+      mkdir -p $cov_dir
+      export MSAN_OPTIONS="coverage=1:coverage_dir=$cov_dir"
+      echo $MSAN_OPTIONS
+      #export ASAN_OPTIONS='coverage=1'
       ;;
     -*)
       die "Invalid flag $flag"
